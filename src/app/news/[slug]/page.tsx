@@ -4,7 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 import { publicEnv } from "@/lib/env";
 import { Container } from "@/components/layout/container";
 
-export const dynamic = "force-dynamic";
 type ArticlePageProps = { params: Promise<{ slug: string }> };
 function publicClient() {
  const env=publicEnv();
