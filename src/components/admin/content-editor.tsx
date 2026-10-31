@@ -7,7 +7,7 @@ type Revision = { id: string; revision_number: number; created_at: string; autho
 
 export function ContentEditor({ record, entity, roles, profileId, saveAction, revisions = [], children }: {
   record: { id: string; title: string; slug: string; body: unknown; status: ContentStatus; created_by_id: string; updated_at: string };
-  entity: "PAGE" | "NEWS_ARTICLE";
+  entity: "PAGE" | "NEWS_ARTICLE" | "SCHOOL_EVENT";
   roles: StaffRole[];
   profileId: string;
   saveAction: (formData: FormData) => void | Promise<void>;
