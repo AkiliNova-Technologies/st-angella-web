@@ -40,7 +40,7 @@ export function ContentEditor({ record, entity, roles, profileId, saveAction, re
         <div><label htmlFor="slug" className="text-sm font-bold">Slug</label><input id="slug" name="slug" defaultValue={record.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" disabled={!canEdit} className="mt-2 min-h-12 w-full border bg-white px-3 disabled:bg-background-warm" /></div>
         {children}
         <RichTextEditor initialValue={initialHtml} disabled={!canEdit} />
-        <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-5"><Link href={backHref} className="inline-flex min-h-11 items-center border border-brand-800 px-5 py-3 text-sm font-bold text-brand-800 hover:bg-background-warm">← Back to {entity === "PAGE" ? "pages" : entity === "NEWS_ARTICLE" ? "news" : "events"}</Link>{canEdit ? <SubmitButton>Save changes</SubmitButton> : <span className="text-sm text-muted-foreground">Read-only in this state or for your role.</span>}</div>
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-5"><Link href={backHref} className="inline-flex min-h-11 items-center border border-brand-800 px-5 py-3 text-sm font-bold text-brand-800 hover:bg-background-warm">Back to {entity === "PAGE" ? "pages" : entity === "NEWS_ARTICLE" ? "news" : "events"}</Link>{canEdit ? <SubmitButton>Save changes</SubmitButton> : <span className="text-sm text-muted-foreground">Read-only in this state or for your role.</span>}</div>
       </form>
     </section>
     <aside className="space-y-6">
