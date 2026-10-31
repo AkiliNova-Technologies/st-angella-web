@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getStaffContext } from "@/lib/auth/require-staff";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const NO_STORE = { "Cache-Control": "private, no-store, max-age=0", "X-Content-Type-Options": "nosniff" };
