@@ -23,6 +23,18 @@ function redirectWith(path: string, kind: "saved" | "created" | "transitioned" |
   redirect(`${path}?${kind}=1`);
 }
 
+export async function createPageAction(formData: FormData) {
+  const staff = await requireStaff();
+  if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
+  const parsed = z.object({ title: z.string().trim().min(2).max(200), slug: slugSchema }).safeParse({ title: formData.get("title"), slug: formData.get("slug") });
+  if (!parsed.success) redirectWith("/admin/pages/new", "error");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("page_contents").insert({ ...parsed.data, body: parseBody(formData.get("body")), created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
+  if (error || !data) redirectWith("/admin/pages/new", "error");
+  revalidatePath("/admin/pages");
+  redirectWith(`/admin/pages/${data.id}`, "created");
+}
+
 export async function updatePageAction(id: string, formData: FormData) {
   const staff = await requireStaff();
   if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
