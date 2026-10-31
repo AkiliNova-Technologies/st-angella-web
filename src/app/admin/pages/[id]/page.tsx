@@ -12,7 +12,7 @@ export default async function PageEditor({ params, searchParams }: { params: Pro
   const feedback = (["error", "saved", "created", "reviewed", "transitioned"] as const).find((key) => feedbackParams[key]) ;
   const staff = await requireStaff(); const { id } = await params; const supabase = await createSupabaseServerClient();
   const [{ data: record }, { data: revisions }] = await Promise.all([
-    supabase.from("page_contents").select("id, title, slug, body, status, created_by_id, updated_at").eq("id", id).single(),
+    supabase.from("page_contents").select("id, title, slug, body, status, created_by_id, updated_at").eq("id", id).is("deleted_at", null).single(),
     supabase.from("content_revisions").select("id, revision_number, created_at, author_id, staff_profiles!content_revisions_author_id_fkey(display_name), content_reviews(id, decision, notes, created_at, staff_profiles!content_reviews_reviewer_id_fkey(display_name))").eq("entity_type", "PAGE").eq("entity_id", id).order("revision_number", { ascending: false }),
   ]);
   if (!record) notFound(); const save = updatePageAction.bind(null, id);
