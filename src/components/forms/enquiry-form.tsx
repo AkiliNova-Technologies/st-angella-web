@@ -15,7 +15,8 @@ export function EnquiryForm({ variant }: { variant: "admissions" | "contact" }) 
   const [serverError, setServerError] = useState("");
   async function validate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (sending) return; setReady(false); setServerError("");
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
     const values = { name: data.get("name"), email: data.get("email"), phone: data.get("phone"), ...(variant === "admissions" ? { intendedClass: data.get("intendedClass") } : {}), message: data.get("message"), privacy: data.get("privacy") === "on" };
     const result = (variant === "admissions" ? admissionsEnquirySchema : contactEnquirySchema).safeParse(values);
     if (!result.success) { setErrors(errorsFrom(result.error)); return; }
@@ -23,7 +24,7 @@ export function EnquiryForm({ variant }: { variant: "admissions" | "contact" }) 
     try {
       const response = await fetch("/api/enquiries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ variant, values, website: data.get("website") || "" }) });
       if (!response.ok) { const result = await response.json(); setServerError(result.error || "Unable to send your enquiry."); return; }
-      setReady(true); event.currentTarget?.reset?.();
+      setReady(true); form.reset();
     } catch { setServerError("Unable to send your enquiry. Please try again."); }
     finally { setSending(false); }
   }
