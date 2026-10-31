@@ -1,3 +1,5 @@
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { FeaturedMediaPicker } from "@/components/admin/featured-media-picker";
 import Link from "next/link";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SubmitButton } from "@/components/admin/submit-button";
@@ -10,7 +12,7 @@ import { hasPermission } from "@/lib/auth/permissions";
 import { EventFields } from "@/components/admin/event-fields";
 
 export default async function NewEvent({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const staff = await requireStaff();
+  const staff = await requireStaff(); const mediaClient = await createSupabaseServerClient(); const {data: featuredAssets} = await mediaClient.from("media_assets").select("id,alt_text,object_path,is_approved").eq("kind","IMAGE").order("created_at",{ascending:false}).limit(100);
   if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
   const { error } = await searchParams;
   return <AdminShell title="Create event" staff={staff} breadcrumbs={[{ label: "Events", href: "/admin/events" }, { label: "New event" }]}>
@@ -19,7 +21,7 @@ export default async function NewEvent({ searchParams }: { searchParams: Promise
       <div><label htmlFor="title" className="text-sm font-bold">Title</label><input id="title" name="title" required maxLength={200} className="mt-2 min-h-12 w-full border px-3" /></div>
       <div><label htmlFor="slug" className="text-sm font-bold">Slug</label><input id="slug" name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" className="mt-2 min-h-12 w-full border px-3" /></div>
       <EventFields />
-      <RichTextEditor />
+      <FeaturedMediaPicker assets={featuredAssets ?? []} /><RichTextEditor />
       <SubmitButton>Save draft</SubmitButton>
     </form>
   </AdminShell>;
