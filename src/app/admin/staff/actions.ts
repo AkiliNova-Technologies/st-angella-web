@@ -80,7 +80,7 @@ export async function manageStaffAction(formData: FormData) {
       if (revokeError) redirect("/admin/staff?error=membership");
     }
   }
-  const auditResult = await admin.from("audit_logs").insert({ actor_id: staff.profileId, action: "STAFF_ACCESS_UPDATED", entity_type: "staff_profiles", entity_id: profileId, metadata: { operation } });
+  const auditResult = await admin.from("audit_logs").insert({ actor_id: staff.profileId, action: "STAFF_ACCESS_UPDATED", entity_type: "staff_profiles", entity_id: profileId, metadata: { operation, new_role: operation === "role" ? role : null } });
   if (auditResult.error) console.error("Audit insert failed", auditResult.error.code);
   revalidatePath("/admin/staff");
   redirect("/admin/staff?updated=1");
