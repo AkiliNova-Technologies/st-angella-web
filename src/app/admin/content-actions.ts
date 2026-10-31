@@ -16,7 +16,7 @@ const pathByEntity = { PAGE: "/admin/pages", NEWS_ARTICLE: "/admin/news", SCHOOL
 
 function parseBody(value: FormDataEntryValue | null) {
   const text = z.string().trim().min(1).max(100_000).parse(value);
-  try { return JSON.parse(text) as unknown; } catch { return { text }; }
+  return { html: text };
 }
 
 function redirectWith(path: string, kind: "saved" | "created" | "transitioned" | "reviewed" | "error"): never {
@@ -126,10 +126,10 @@ export async function transitionContentAction(entityInput: string, idInput: stri
     if (!record || record.created_by_id !== staff.profileId || record.status !== "DRAFT") redirect("/admin/forbidden");
     const { data: latest } = await supabase.from("content_revisions").select("revision_number").eq("entity_type", entity).eq("entity_id", id).order("revision_number", { ascending: false }).limit(1).maybeSingle();
     const { error: revisionError } = await supabase.from("content_revisions").insert({ entity_type: entity, entity_id: id, revision_number: (latest?.revision_number ?? 0) + 1, snapshot: record, author_id: staff.profileId });
-    if (revisionError) redirectWith(`${basePath}/${id}`, "error");
+    if (revisionError) { console.error("Content revision creation failed", { entity, id, code: revisionError.code, message: revisionError.message }); redirectWith(`${basePath}/${id}`, "error"); }
   }
   const { error } = await supabase.rpc("transition_content", { entity_type: entity, entity_id: id, target_status: target });
-  if (error) redirectWith(`${basePath}/${id}`, "error");
+  if (error) { console.error("Content transition failed", { entity, id, target, code: error.code, message: error.message }); redirectWith(`${basePath}/${id}`, "error"); }
   revalidatePath("/admin"); revalidatePath(basePath); revalidatePath(`${basePath}/${id}`);
   redirectWith(`${basePath}/${id}`, "transitioned");
 }
