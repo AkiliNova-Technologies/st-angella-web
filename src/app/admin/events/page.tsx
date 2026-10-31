@@ -1,0 +1,2 @@
+import { AdminPlaceholder } from "@/components/admin/admin-placeholder"; import { requireStaff } from "@/lib/auth/require-staff";
+export default async function EventsAdmin() { const staff = await requireStaff(); return <AdminPlaceholder title="Events" staff={staff} description="Event management is reserved for the next administration milestone. Existing events still contribute to dashboard counts." />; }

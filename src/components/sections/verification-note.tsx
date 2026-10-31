@@ -1,0 +1,2 @@
+import { CircleAlert } from "lucide-react";
+export function VerificationNote({ title = "Verified content pending", children }: { title?: string; children: React.ReactNode }) { return <aside className="border-l-4 border-accent-gold bg-background-soft p-6"><div className="flex gap-4"><CircleAlert className="mt-0.5 size-5 shrink-0 text-brand-800" aria-hidden="true" /><div><h3 className="font-heading font-bold text-brand-900">{title}</h3><div className="mt-2 text-sm text-muted-foreground">{children}</div></div></div></aside>; }

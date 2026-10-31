@@ -1,0 +1,9 @@
+import type { Metadata } from "next";
+import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import { EnquiryForm } from "@/components/forms/enquiry-form";
+import { InteriorHero } from "@/components/sections/interior-hero";
+import { ContentSection } from "@/components/sections/content-section";
+import { ContentGrid } from "@/components/sections/content-grid";
+import { VerificationNote } from "@/components/sections/verification-note";
+export const metadata: Metadata = { title: "Contact", description: "Contact information for St. Angella School in Kisaasi, Kampala." };
+export default function ContactPage() { return <><InteriorHero eyebrow="Contact" title="Connect with St. Angella" description="Find the verified school location and prepare a general enquiry. Unconfirmed contact details are intentionally withheld." /><ContentSection eyebrow="Contact details" title="How to find us"><ContentGrid columns={4} items={[{ icon: MapPin, title: "Location", description: "Kisaasi, Kampala, Uganda", status: "Confirmed" }, { icon: Phone, title: "Telephone", description: "No verified telephone number supplied.", status: "Pending" }, { icon: Mail, title: "Email", description: "No verified email address supplied.", status: "Pending" }, { icon: Clock, title: "Opening hours", description: "No approved opening hours supplied.", status: "Pending" }]} /></ContentSection><ContentSection tone="warm" eyebrow="Directions" title="Map and journey planning"><VerificationNote title="Map integration pending">A precise, school-approved map location is required before an embedded map or directions link can be published.</VerificationNote></ContentSection><ContentSection eyebrow="General enquiry" title="Prepare a message" description="Review your details with local validation. Secure delivery is not yet connected."><div className="max-w-4xl"><EnquiryForm variant="contact" /></div></ContentSection></>; }

@@ -1,0 +1,4 @@
+import { LinkButton } from "@/components/ui/link-button";
+import { ImageTextSection } from "@/components/sections/image-text-section";
+
+export function AboutHome() { return <div className="bg-white"><ImageTextSection eyebrow="About St. Angella" title="A foundation for every learner" description="St. Angella is a nursery and primary school located in Kisaasi, Kampala. The school’s full story and approved educational approach will be added after content review."><div className="border-l-2 border-accent-gold pl-5"><p className="text-sm font-semibold text-brand-900">School motto</p><p className="mt-1 font-heading text-xl font-bold text-brand-800">Never Give Up</p><p className="mt-3 text-sm text-muted-foreground">The original crest and confirmed vision statement will appear here when the approved asset and wording are supplied.</p></div><LinkButton href="/about" showArrow className="mt-7">Learn more about us</LinkButton></ImageTextSection></div>; }

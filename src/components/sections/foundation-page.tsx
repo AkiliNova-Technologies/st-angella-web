@@ -1,0 +1,3 @@
+import { Container } from "@/components/layout/container";
+import { PageIntro } from "./page-intro";
+export function FoundationPage({ title, description }: { title: string; description: string }) { return <><PageIntro title={title} description={description} /><section className="py-16 lg:py-24"><Container><div className="max-w-3xl border-l-4 border-accent-gold bg-background-soft p-6"><h2 className="font-heading text-xl font-bold text-brand-900">Content pending school review</h2><p className="mt-2 text-muted-foreground">This Phase 1 route foundation is ready for verified, school-approved content. No placeholder claims are being presented as fact.</p></div></Container></section></>; }

@@ -1,0 +1,2 @@
+import { Container } from "@/components/layout/container";
+export function PageIntro({ title, description }: { title: string; description: string }) { return <section className="bg-background-warm py-16 sm:py-20"><Container><p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-800">St. Angella School</p><h1 className="mt-4 max-w-4xl font-heading text-4xl font-extrabold tracking-tight text-brand-900 sm:text-5xl lg:text-6xl">{title}</h1><p className="mt-5 max-w-2xl text-lg text-muted-foreground">{description}</p></Container></section>; }

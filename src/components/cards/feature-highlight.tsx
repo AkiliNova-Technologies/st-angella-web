@@ -1,0 +1,2 @@
+import type { LucideIcon } from "lucide-react";
+export function FeatureHighlight({ icon: Icon, title, description }: { icon: LucideIcon; title: string; description: string }) { return <article className="border border-border bg-white p-6"><Icon className="size-8 text-brand-800" strokeWidth={1.75} aria-hidden="true" /><h3 className="mt-5 font-heading text-xl font-bold text-brand-900">{title}</h3><p className="mt-2 text-sm text-muted-foreground">{description}</p></article>; }

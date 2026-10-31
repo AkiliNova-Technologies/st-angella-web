@@ -1,0 +1,17 @@
+import type { Metadata } from "next";
+import { ClipboardList, FileCheck2, MessageSquareText, Send } from "lucide-react";
+import { EnquiryForm } from "@/components/forms/enquiry-form";
+import { InteriorHero } from "@/components/sections/interior-hero";
+import { ContentSection } from "@/components/sections/content-section";
+import { ContentGrid } from "@/components/sections/content-grid";
+import { VerificationNote } from "@/components/sections/verification-note";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+export const metadata: Metadata = { title: "Admissions", description: "Admissions information and enquiry form for St. Angella School." };
+
+export default function AdmissionsPage() { return <><InteriorHero eyebrow="Admissions" title="Begin your St. Angella journey" description="Review the admissions experience and prepare an enquiry. Application details remain unpublished until confirmed by the school." />
+  <ContentSection eyebrow="Getting started" title="Admissions overview" description="This experience is designed to make verified requirements and next steps easy to understand."><VerificationNote>Eligibility, intake dates, fees, and available places have not been supplied. Please do not rely on the visual reference mockup for admissions information.</VerificationNote></ContentSection>
+  <ContentSection tone="warm" eyebrow="Application pathway" title="A clear process, once confirmed"><ContentGrid columns={4} items={[{ icon: MessageSquareText, title: "1. Enquire", description: "Secure enquiry delivery must be activated before messages can be sent.", status: "Not active" }, { icon: ClipboardList, title: "2. Review", description: "School review and response process awaiting confirmation.", status: "Verification required" }, { icon: FileCheck2, title: "3. Documents", description: "Required documents have not been confirmed.", status: "Verification required" }, { icon: Send, title: "4. Next steps", description: "Offer, registration, or enrolment steps awaiting confirmation.", status: "Verification required" }]} /></ContentSection>
+  <ContentSection eyebrow="Requirements" title="What you may need"><VerificationNote title="Requirements not yet published">The school must confirm eligibility, documents, deadlines, fees, and safeguarding requirements before this section can be completed.</VerificationNote></ContentSection>
+  <ContentSection tone="soft" eyebrow="Questions" title="Frequently asked questions"><div className="max-w-4xl border border-border bg-white px-6"><Accordion><AccordionItem value="availability"><AccordionTrigger>Are places currently available?</AccordionTrigger><AccordionContent>Availability has not been confirmed. Secure enquiry delivery is not yet active.</AccordionContent></AccordionItem><AccordionItem value="requirements"><AccordionTrigger>Which documents are required?</AccordionTrigger><AccordionContent>The school has not yet supplied an approved document checklist.</AccordionContent></AccordionItem><AccordionItem value="fees"><AccordionTrigger>Are fees published online?</AccordionTrigger><AccordionContent>No authorized fee information has been supplied for publication.</AccordionContent></AccordionItem></Accordion></div></ContentSection>
+  <ContentSection eyebrow="Enquiry form" title="Prepare an admissions enquiry" description="Use local validation to review the requested details. Nothing is transmitted or stored."><div className="max-w-4xl"><EnquiryForm variant="admissions" /></div></ContentSection>
+  </>; }

@@ -1,0 +1,15 @@
+import type { Metadata } from "next";
+import { BookOpen, ClipboardCheck, GraduationCap, HandHeart, Library, Shapes } from "lucide-react";
+import { InteriorHero } from "@/components/sections/interior-hero";
+import { ContentSection } from "@/components/sections/content-section";
+import { ContentGrid } from "@/components/sections/content-grid";
+import { VerificationNote } from "@/components/sections/verification-note";
+import { AdmissionsCta } from "@/components/sections/admissions-cta";
+export const metadata: Metadata = { title: "Academics", description: "Explore nursery and primary education at St. Angella School." };
+
+export default function AcademicsPage() { return <><InteriorHero eyebrow="Academics" title="Learning from nursery through Primary Seven" description="Explore the structure of the school’s nursery and primary levels. Curriculum and teaching details remain clearly marked until verified." />
+  <ContentSection eyebrow="Programmes" title="Education at each stage"><ContentGrid columns={2} items={[{ icon: Shapes, title: "Nursery education", description: "A dedicated overview is ready for approved information about the nursery learning experience.", status: "Programme details pending" }, { icon: GraduationCap, title: "Primary education (P1–P7)", description: "A dedicated overview is ready for approved information across the primary years.", status: "Programme details pending" }]} /></ContentSection>
+  <ContentSection tone="warm" eyebrow="Teaching & learning" title="How learning is supported" description="The following areas are prepared for school-approved descriptions."><ContentGrid items={[{ icon: BookOpen, title: "Teaching approach", description: "Teaching methods and classroom practice awaiting verification.", status: "Verification required" }, { icon: Library, title: "Curriculum", description: "Curriculum framework and subject information awaiting verification.", status: "Verification required" }, { icon: HandHeart, title: "Academic support", description: "Support pathways and intervention details awaiting verification.", status: "Verification required" }]} /></ContentSection>
+  <ContentSection eyebrow="Progress" title="Assessment and pupil development"><div className="grid gap-8 lg:grid-cols-[1fr_0.7fr]"><div><h3 className="font-heading text-2xl font-bold text-brand-900">A complete view of learning</h3><p className="mt-4 max-w-2xl text-muted-foreground">This section is structured for approved information about assessment, feedback, progress reporting, and pupil development. No results or performance claims are included.</p></div><VerificationNote title="Assessment information pending"><span className="flex items-start gap-3"><ClipboardCheck className="mt-0.5 size-5 shrink-0 text-brand-800" aria-hidden="true" />Official assessment and reporting practices must be confirmed by the school.</span></VerificationNote></div></ContentSection>
+  <AdmissionsCta title="Considering St. Angella?" description="Continue to admissions for the verified information currently available and the enquiry-form preview." />
+  </>; }

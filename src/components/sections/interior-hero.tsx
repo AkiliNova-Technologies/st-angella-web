@@ -1,0 +1,6 @@
+import { ImageIcon } from "lucide-react";
+import { Container } from "@/components/layout/container";
+
+export function InteriorHero({ eyebrow, title, description }: { eyebrow: string; title: string; description: string }) {
+  return <section className="overflow-hidden bg-brand-900 text-white"><Container className="grid min-h-[28rem] lg:grid-cols-12"><div className="flex flex-col justify-center py-16 lg:col-span-7 lg:py-24 lg:pr-14"><p className="text-xs font-bold uppercase tracking-[0.18em] text-accent-gold">{eyebrow}</p><h1 className="mt-5 max-w-3xl font-heading text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">{title}</h1><p className="mt-6 max-w-2xl text-lg text-white/75">{description}</p></div><div className="flex min-h-64 items-center justify-center border-t border-white/15 bg-background-soft p-8 text-center text-brand-800 lg:col-span-5 lg:border-l lg:border-t-0"><div><ImageIcon className="mx-auto size-10" strokeWidth={1.5} aria-hidden="true" /><p className="mt-4 text-sm font-semibold">Approved school photography pending</p><p className="mt-1 max-w-xs text-xs text-muted-foreground">This space is reserved for consent-cleared, authentic school imagery.</p></div></div></Container></section>;
+}
