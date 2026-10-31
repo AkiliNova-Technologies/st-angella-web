@@ -35,8 +35,8 @@ export function MediaUploadForm({ categories }: { categories: { id: string; name
     }
   }
 
-  return <form action={uploadMediaAction} className="mb-7 grid gap-4 border bg-white p-5 sm:grid-cols-2">
-    <h2 className="font-heading text-lg font-bold text-brand-900 sm:col-span-2">Upload media</h2>
+  return <form action={uploadMediaAction} className="grid gap-4 sm:grid-cols-2">
+    <p className="text-sm text-muted-foreground sm:col-span-2">Files remain private until the school’s consent and publishing workflow is approved.</p>
     <div className="sm:col-span-2">
       <input ref={input} id="media-file" name="file" type="file" accept={ACCEPT.join(",")} required className="sr-only" onChange={event => choose(event.currentTarget.files?.[0])} />
       <div role="button" tabIndex={0} aria-label="Choose or drop a media file" aria-describedby="media-drop-help"
