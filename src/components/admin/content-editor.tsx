@@ -5,7 +5,7 @@ import { reviewContentAction, transitionContentAction } from "@/app/admin/conten
 
 type Revision = { id: string; revision_number: number; created_at: string; author_id: string; staff_profiles: { display_name: string } | null; content_reviews: { id: string; decision: string; notes: string | null; created_at: string; staff_profiles: { display_name: string } | null }[] };
 
-export function ContentEditor({ record, entity, roles, profileId, saveAction, revisions = [], children }: {
+export function ContentEditor({ record, entity, roles, profileId, saveAction, revisions = [], children, feedback }: {
   record: { id: string; title: string; slug: string; body: unknown; status: ContentStatus; created_by_id: string; updated_at: string };
   entity: "PAGE" | "NEWS_ARTICLE" | "SCHOOL_EVENT";
   roles: StaffRole[];
@@ -13,6 +13,7 @@ export function ContentEditor({ record, entity, roles, profileId, saveAction, re
   saveAction: (formData: FormData) => void | Promise<void>;
   revisions?: Revision[];
   children?: React.ReactNode;
+  feedback?: "saved" | "created" | "transitioned" | "reviewed" | "error";
 }) {
   const isSuper = roles.includes("SUPER_ADMIN");
   const canEdit = (roles.includes("EDITOR") || isSuper) && ["DRAFT", "IN_REVIEW"].includes(record.status) && (record.created_by_id === profileId || isSuper);
@@ -26,6 +27,7 @@ export function ContentEditor({ record, entity, roles, profileId, saveAction, re
   const review = reviewContentAction.bind(null, entity, record.id);
   return <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
     <section className="border bg-white">
+      {feedback && <p role={feedback === "error" ? "alert" : "status"} className={`m-5 border-l-4 p-4 text-sm ${feedback === "error" ? "border-destructive bg-red-50" : "border-brand-800 bg-background-soft"}`}>{feedback === "error" ? "Action failed. Please review the record and try again." : feedback === "saved" ? "Changes saved." : feedback === "created" ? "Draft created." : feedback === "reviewed" ? "Review recorded." : "Workflow status updated."}</p>}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b px-6 py-5"><div><h2 className="font-heading text-xl font-bold text-brand-900">Content</h2><p className="mt-1 text-xs text-muted-foreground">Last updated {new Intl.DateTimeFormat("en-UG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(record.updated_at))}</p></div><StatusBadge status={record.status} /></div>
       <form action={saveAction} className="space-y-5 p-6">
         <div><label htmlFor="title" className="text-sm font-bold">Title</label><input id="title" name="title" defaultValue={record.title} required maxLength={200} disabled={!canEdit} className="mt-2 min-h-12 w-full border bg-white px-3 disabled:bg-background-warm" /></div>
