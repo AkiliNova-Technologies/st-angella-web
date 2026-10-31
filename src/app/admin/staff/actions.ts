@@ -73,7 +73,8 @@ export async function manageStaffAction(formData: FormData) {
       if (revokeError) redirect("/admin/staff?error=membership");
     }
   }
-  // Administrative changes should be recorded in the audit trail.
+  const auditResult = await admin.from("audit_logs").insert({ actor_id: staff.profileId, action: "STAFF_ACCESS_UPDATED", entity_type: "staff_profiles", entity_id: profileId, metadata: { operation } });
+  if (auditResult.error) console.error("Audit insert failed", auditResult.error.code);
   revalidatePath("/admin/staff");
   redirect("/admin/staff?updated=1");
 }
