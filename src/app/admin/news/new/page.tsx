@@ -1,3 +1,4 @@
+export const instant = false;
 import { redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { createNewsAction } from "@/app/admin/content-actions";
