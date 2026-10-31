@@ -66,6 +66,13 @@ export async function manageStaffAction(formData: FormData) {
       if (revokeError) redirect("/admin/staff?error=membership");
     }
   } else {
+    if (operation !== "reactivate") {
+      const { error: signOutError } = await admin.auth.admin.signOut(target.auth_user_id, "global");
+      if (signOutError) {
+        console.error("Staff session revocation failed", { code: signOutError.code });
+        redirect("/admin/staff?error=session");
+      }
+    }
     const { error: statusError } = await admin.from("staff_profiles").update({ is_active: operation === "reactivate" }).eq("id", profileId);
     if (statusError) redirect("/admin/staff?error=status");
     if (operation === "remove") {
