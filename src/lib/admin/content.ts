@@ -20,7 +20,7 @@ export async function getDashboardData() {
   const queue = [
     ...(pages.data ?? []).map((item) => ({ ...item, type: "Page", href: `/admin/pages/${item.id}` })),
     ...(news.data ?? []).map((item) => ({ ...item, type: "News", href: `/admin/news/${item.id}` })),
-    ...(events.data ?? []).map((item) => ({ ...item, type: "Event", href: "/admin/events" })),
+    ...(events.data ?? []).map((item) => ({ ...item, type: "Event", href: `/admin/events/${item.id}` })),
   ].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 8);
   return { published: sum(0), drafts: sum(1), pending: sum(2), upcomingEvents: upcomingEvents ?? 0, activity: activity ?? [], queue };
 }
