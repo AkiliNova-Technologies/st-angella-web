@@ -14,7 +14,7 @@ export async function updateEnquiryStatusAction(formData: FormData) {
   const table = type === "contact" ? "contact_enquiries" : "admission_enquiries";
   const { data, error } = await supabase.from(table).update({ status }).eq("id", id).is("deleted_at", null).select("id").single();
   if (error) console.error("Enquiry status update failed", { type, code: error.code, message: error.message });
-  if (error || !data) redirect(`/admin/enquiries?type=${type}&error=1`);
+  if (error || !data) redirect(`/admin/enquiries/${id}?type=${type}&error=1`);
   revalidatePath("/admin/enquiries");
-  redirect(`/admin/enquiries?type=${type}&saved=1`);
+  redirect(`/admin/enquiries/${id}?type=${type}&saved=1`);
 }
