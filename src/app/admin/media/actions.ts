@@ -40,9 +40,10 @@ export async function uploadMediaAction(formData: FormData) {
   if (!parsed.success || !(file instanceof File) || file.size < 1 || file.size > MAX_UPLOAD || !ALLOWED.has(file.type)) redirect("/admin/media?error=validation");
   const bucket = process.env.MEDIA_PRIVATE_BUCKET || "school-photography";
   const supabase = await createSupabaseServerClient();
-  // Check the bucket exists and is private. Never upload school media into a public bucket.
-  const { data: bucketInfo, error: bucketError } = await supabase.storage.getBucket(bucket);
-  if (bucketError || !bucketInfo || bucketInfo.public) { console.error("Media bucket unavailable or not private", { bucket, code: bucketError?.message }); redirect("/admin/media?error=bucket"); }
+  // Bucket is selected from a fixed allowlist of provisioned private buckets.
+  // Authenticated staff cannot necessarily call getBucket (bucket metadata is not public).
+  // Storage INSERT policy enforces the bucket and user-scoped path.
+  if (!["school-photography", "news-images", "gallery-images", "brand-assets"].includes(bucket)) redirect("/admin/media?error=bucket");
   const extension = ALLOWED.get(file.type)!;
   const objectPath = `${staff.userId}/${crypto.randomUUID()}.${extension}`;
   const { error: uploadError } = await supabase.storage.from(bucket).upload(objectPath, file, { contentType: file.type, upsert: false, cacheControl: "private, max-age=0" });
