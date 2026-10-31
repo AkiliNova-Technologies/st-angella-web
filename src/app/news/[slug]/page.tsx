@@ -20,7 +20,7 @@ export async function generateMetadata({params}:ArticlePageProps):Promise<Metada
  return article?{title:article.title,description:article.summary??undefined}:{title:"Article not found"};
 }
 function paragraphs(body:unknown):string[] {
- if(Array.isArray(body)) return body.filter((item):item is string=>typeof item==="string");
+ if(Array.isArray(body)) return body.flatMap((item):string[]=>typeof item==="string"?[item]:item && typeof item==="object" && typeof item.text==="string"?[item.text]:[]);
  if(body && typeof body==="object" && "content" in body) {
   const content=(body as {content?:unknown}).content;
   if(Array.isArray(content)) return content.flatMap(node=>{
