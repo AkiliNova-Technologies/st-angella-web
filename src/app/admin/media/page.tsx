@@ -1,3 +1,4 @@
+export const instant = false;
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminEmptyState } from "@/components/admin/empty-state";
 import { requireStaff } from "@/lib/auth/require-staff";
