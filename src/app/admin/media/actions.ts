@@ -5,7 +5,6 @@ import { z } from "zod";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { hasPermission } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function updateMediaMetadataAction(formData: FormData) {
   const staff = await requireStaff();
@@ -62,20 +61,4 @@ export async function uploadMediaAction(formData: FormData) {
   }
   revalidatePath("/admin/media");
   redirect("/admin/media?uploaded=1");
-}
-
-export async function deleteUnusedMediaAction(formData: FormData) {
-  const staff = await requireStaff(["SUPER_ADMIN"]);
-  const parsed = z.string().uuid().safeParse(formData.get("id"));
-  if (!parsed.success) redirect("/admin/media?error=validation");
-  const admin = createSupabaseAdminClient();
-  const { data: asset, error } = await admin.from("media_assets").select("id,bucket,object_path,is_approved,is_public").eq("id",parsed.data).single();
-  if (error || !asset) redirect("/admin/media?error=notfound");
-  if (asset.is_approved || asset.is_public) redirect("/admin/media?error=protected");
-  // Fail closed: permanent storage deletion is disabled until reference checks
-  // and database/storage cleanup can be performed as a recoverable workflow.
-  // Existing media records and storage objects remain untouched.
-  redirect("/admin/media?error=deletion_disabled");
-  revalidatePath("/admin/media");
-  redirect("/admin/media?deleted=1");
 }
