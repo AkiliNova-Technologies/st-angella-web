@@ -1,4 +1,6 @@
+"use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { CalendarDays, FileText, Images, LayoutDashboard, Mail, Newspaper, Settings, Users } from "lucide-react";
 import { logoutAction } from "@/app/admin/actions";
@@ -24,9 +26,10 @@ type Props = {
 };
 
 function Navigation({ roles }: { roles: StaffRole[] }) {
+  const pathname = usePathname();
   return <nav aria-label="Administration navigation" className="space-y-1">
     {navigation.filter((item) => !item.superOnly || roles.includes("SUPER_ADMIN")).map(({ href, label, icon: Icon, enabled }) => enabled ? (
-      <Link key={href} href={href} className="flex min-h-11 items-center gap-3 border-l-2 border-transparent px-4 text-sm font-semibold text-white/80 hover:border-accent-gold hover:bg-white/10 hover:text-white">
+      <Link key={href} href={href} aria-current={pathname === href || (href !== "/admin" && pathname.startsWith(href + "/")) ? "page" : undefined} className={`flex min-h-11 items-center gap-3 border-l-2 px-4 text-sm font-semibold transition-colors ${pathname === href || (href !== "/admin" && pathname.startsWith(href + "/")) ? "border-accent-gold bg-white/15 text-white" : "border-transparent text-white/80 hover:border-accent-gold hover:bg-white/10 hover:text-white"}`}>
         <Icon className="size-4" aria-hidden="true" />{label}
       </Link>
     ) : (
