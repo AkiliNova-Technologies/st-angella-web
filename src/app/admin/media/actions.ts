@@ -38,15 +38,15 @@ export async function uploadMediaAction(formData: FormData) {
     contains_pupils: formData.get("contains_pupils"),
   });
   if (!parsed.success || !(file instanceof File) || file.size < 1 || file.size > MAX_UPLOAD || !ALLOWED.has(file.type)) redirect("/admin/media?error=validation");
-  const bucket = process.env.MEDIA_PRIVATE_BUCKET || "school-media-private";
+  const bucket = process.env.MEDIA_PRIVATE_BUCKET || "school-photography";
   const supabase = await createSupabaseServerClient();
   // Check the bucket exists and is private. Never upload school media into a public bucket.
   const { data: bucketInfo, error: bucketError } = await supabase.storage.getBucket(bucket);
-  if (bucketError || !bucketInfo || bucketInfo.public) redirect("/admin/media?error=bucket");
+  if (bucketError || !bucketInfo || bucketInfo.public) { console.error("Media bucket unavailable or not private", { bucket, code: bucketError?.message }); redirect("/admin/media?error=bucket"); }
   const extension = ALLOWED.get(file.type)!;
-  const objectPath = `staff/${staff.profileId}/${crypto.randomUUID()}.${extension}`;
+  const objectPath = `${staff.userId}/${crypto.randomUUID()}.${extension}`;
   const { error: uploadError } = await supabase.storage.from(bucket).upload(objectPath, file, { contentType: file.type, upsert: false, cacheControl: "private, max-age=0" });
-  if (uploadError) redirect("/admin/media?error=upload");
+  if (uploadError) { console.error("Private media upload failed", { code: uploadError.name, message: uploadError.message }); redirect("/admin/media?error=upload"); }
   const { error: recordError } = await supabase.from("media_assets").insert({
     bucket, object_path: objectPath, kind: file.type === "application/pdf" ? "DOCUMENT" : "IMAGE",
     mime_type: file.type, byte_size: file.size, alt_text: parsed.data.alt_text || null,
