@@ -1,3 +1,4 @@
+export const instant = false;
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { ContentEditor } from "@/components/admin/content-editor";
