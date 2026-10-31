@@ -1,3 +1,4 @@
+export const instant = false;
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminEmptyState } from "@/components/admin/empty-state";
