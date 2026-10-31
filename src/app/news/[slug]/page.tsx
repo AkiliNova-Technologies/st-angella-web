@@ -19,7 +19,15 @@ export async function generateMetadata({params}:ArticlePageProps):Promise<Metada
  const {slug}=await params; const article=await getArticle(slug);
  return article?{title:article.title,description:article.summary??undefined}:{title:"Article not found"};
 }
+function plainTextFromHtml(html:string):string[] {
+ const safe=html.replace(/<(script|style|iframe|object|svg)\\b[^>]*>[\\s\\S]*?<\\/\\1\\s*>/gi,"");
+ return safe.replace(/<br\\s*\\/?>/gi,"\\n").replace(/<\\/(p|div|h[1-6]|li|blockquote)>/gi,"\\n")
+  .replace(/<[^>]*>/g,"").replace(/&(?:amp|lt|gt|quot|apos|nbsp|#39);/g,entity=>({ "&amp;":"&","&lt;":"<","&gt;":">","&quot;":'"',"&apos;":"'","&nbsp;":" ","&#39;":"'" }[entity]??entity))
+  .split(/\\n+/).map(line=>line.trim()).filter(Boolean);
+}
 function paragraphs(body:unknown):string[] {
+ if(body && typeof body==="object" && "html" in body && typeof (body as {html?:unknown}).html==="string") return plainTextFromHtml((body as {html:string}).html);
+
  if(Array.isArray(body)) return body.flatMap((item):string[]=>typeof item==="string"?[item]:item && typeof item==="object" && typeof item.text==="string"?[item.text]:[]);
  if(body && typeof body==="object" && "content" in body) {
   const content=(body as {content?:unknown}).content;
