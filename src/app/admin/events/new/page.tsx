@@ -19,7 +19,7 @@ export default async function NewEvent({ searchParams }: { searchParams: Promise
       <div><label htmlFor="title" className="text-sm font-bold">Title</label><input id="title" name="title" required maxLength={200} className="mt-2 min-h-12 w-full border px-3" /></div>
       <div><label htmlFor="slug" className="text-sm font-bold">Slug</label><input id="slug" name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" className="mt-2 min-h-12 w-full border px-3" /></div>
       <EventFields />
-      <div><label htmlFor="body" className="text-sm font-bold">Content JSON or plain text</label><textarea id="body" name="body" required rows={12} className="mt-2 w-full border p-3 font-mono text-sm" /></div>
+      <RichTextEditor />
       <SubmitButton>Save draft</SubmitButton>
     </form>
   </AdminShell>;
