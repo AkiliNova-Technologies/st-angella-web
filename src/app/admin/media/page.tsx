@@ -1,4 +1,4 @@
-import { FileText, ShieldCheck, ShieldAlert, Trash2 } from "lucide-react";
+import { FileText, ShieldCheck, ShieldAlert } from "lucide-react";
 import { FormSelect } from "@/components/admin/form-select";
 import { MediaUploadForm } from "@/components/admin/media-upload-form";
 import { AdminPagination, parseTablePagination } from "@/components/admin/data-table";
@@ -8,9 +8,9 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminEmptyState } from "@/components/admin/empty-state";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { updateMediaMetadataAction, deleteUnusedMediaAction } from "./actions";
+import { updateMediaMetadataAction } from "./actions";
 
-export default async function MediaAdmin({ searchParams }: { searchParams: Promise<{ saved?: string; uploaded?: string; deleted?: string; error?: string; page?: string; pageSize?: string }> }) {
+export default async function MediaAdmin({ searchParams }: { searchParams: Promise<{ saved?: string; uploaded?: string; error?: string; page?: string; pageSize?: string }> }) {
   const staff = await requireStaff(); const params = await searchParams; const { page, pageSize } = parseTablePagination(params);
   const supabase = await createSupabaseServerClient();
   const [{ data: assets, count, error }, { data: categories }] = await Promise.all([
@@ -22,7 +22,6 @@ export default async function MediaAdmin({ searchParams }: { searchParams: Promi
   return <AdminShell title="Media Library" staff={staff} breadcrumbs={[{ label: "Media Library" }]}>
     <p className="mb-6 border-l-4 border-accent-gold bg-white p-4 text-sm">Upload images and PDF documents to private storage. Public approval and publishing remain disabled pending consent and secure-delivery validation. Never upload pupil images without appropriate authorization.</p>
     {params.uploaded && <p role="status" className="mb-4 border bg-white p-3 text-sm">Media uploaded privately and registered successfully.</p>}
-    {params.deleted && <p role="status" className="mb-4 border bg-white p-3 text-sm">Unused private media deleted.</p>}
     {params.saved && <p role="status" className="mb-4 border bg-white p-3 text-sm">Media metadata saved.</p>}
     {(params.error || error) && <p role="alert" className="mb-4 border border-destructive bg-white p-3 text-sm">{error ? "Media records could not be loaded. Check database permissions and server logs." : uploadErrors[params.error ?? ""] ?? ({ inuse: "This asset is referenced by content or consent records and cannot be deleted.", protected: "Approved or public assets cannot be deleted.", references: "Reference checks failed; no media was deleted.", storage: "Storage deletion failed; no media record was removed.", record: "Storage was removed, but the media record could not be deleted. Contact an administrator.", notfound: "Media asset not found." }[params.error ?? ""] ?? "Unable to update media metadata. Please try again.")}</p>}
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-heading text-xl font-bold text-brand-900">Your media</h2><p className="mt-1 text-sm text-muted-foreground">{count ?? 0} registered assets · Private storage</p></div>{canEdit && <a href="#upload-media" className="border border-brand-800 bg-brand-800 px-4 py-2 text-sm font-semibold text-white">Upload media</a>}</div>
@@ -39,7 +38,7 @@ export default async function MediaAdmin({ searchParams }: { searchParams: Promi
           <details className="border-t pt-3"><summary className="cursor-pointer text-sm font-semibold text-brand-800 focus-visible:outline-2 focus-visible:outline-brand-800">Details and metadata</summary>
             <form action={updateMediaMetadataAction} className="mt-4 space-y-3"><input type="hidden" name="id" value={asset.id} /><div><label htmlFor={`alt-${asset.id}`} className="text-sm font-bold">Alternative text</label><textarea id={`alt-${asset.id}`} name="alt_text" defaultValue={asset.alt_text ?? ""} maxLength={500} disabled={!editable} rows={2} className="mt-2 w-full border p-2 text-sm disabled:bg-background-warm" /></div><FormSelect name="category_id" label="Category" defaultValue={asset.category_id ?? ""} disabled={!editable} options={[{ value: "", label: "Uncategorized" }, ...(categories ?? []).map(category => ({ value: category.id, label: category.name }))]} />{editable ? <SubmitButton className="bg-brand-800 px-4 py-2 text-sm font-bold text-white">Save metadata</SubmitButton> : <p className="text-xs text-muted-foreground">Read-only: approved asset or insufficient permissions.</p>}</form>
           </details>
-          {staff.roles.includes("SUPER_ADMIN") && !asset.is_approved && !asset.is_public && <details className="border-t pt-3"><summary className="cursor-pointer text-sm font-semibold text-red-800">Delete unused media</summary><p className="my-2 text-xs text-muted-foreground">Permanent deletion is allowed only when the file is not referenced by news, events, or consent records. Verify it is not embedded elsewhere.</p><form action={deleteUnusedMediaAction}><input type="hidden" name="id" value={asset.id}/><button type="submit" className="inline-flex items-center gap-2 border border-red-700 px-3 py-2 text-sm font-semibold text-red-800"><Trash2 className="size-4" aria-hidden="true"/> Delete permanently</button></form></details>}
+
         </div>
       </article>;
     })}</div><div className="mt-5 border bg-white"><AdminPagination basePath="/admin/media" params={{}} page={page} pageSize={pageSize} total={count ?? 0} /></div></> : <AdminEmptyState title="No media assets" description="No files have been registered yet. Open the upload section to add your first private media asset." />)}
