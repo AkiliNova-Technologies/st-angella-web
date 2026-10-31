@@ -73,6 +73,7 @@ export async function manageStaffAction(formData: FormData) {
       if (revokeError) redirect("/admin/staff?error=membership");
     }
   }
+  // Administrative changes should be recorded in the audit trail.
   revalidatePath("/admin/staff");
   redirect("/admin/staff?updated=1");
 }
