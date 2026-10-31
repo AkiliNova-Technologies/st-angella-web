@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireStaff } from "@/lib/auth/require-staff";
+import { publicEnv } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const schema = z.object({ displayName: z.string().trim().min(2).max(120), email: z.string().trim().email().max(254), role: z.enum(["EDITOR", "REVIEWER"]) });
@@ -15,7 +16,7 @@ export async function inviteStaffAction(formData: FormData) {
   if (!existing?.length) redirect("/admin/staff?error=unauthorized");
   const { data: role, error: roleError } = await admin.from("staff_roles").select("id").eq("code", parsed.data.role).single();
   if (roleError || !role) redirect("/admin/staff?error=role");
-  const { data: invitation, error: inviteError } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, { data: { display_name: parsed.data.displayName } });
+  const { data: invitation, error: inviteError } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, { data: { display_name: parsed.data.displayName }, redirectTo: new URL("/admin/setup-password", publicEnv().NEXT_PUBLIC_SITE_URL).toString() });
   if (inviteError || !invitation.user) {
     console.error("Staff invitation failed", { code: inviteError?.code, message: inviteError?.message });
     redirect("/admin/staff?error=invite");
