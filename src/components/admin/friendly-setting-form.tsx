@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { saveSettingAction } from "@/app/admin/settings/actions";
 import { SubmitButton } from "@/components/admin/submit-button";
+import { FormCheckbox } from "@/components/admin/form-checkbox";
 type Setting={id:string;key:string;value:unknown;is_public:boolean};
 const labels:Record<string,string>={school_contact:"School contact information",academic_programmes:"Academic programmes",school_motto:"School motto",school_name:"School name",school_address:"School address",office_hours:"Office hours",email:"Email address",phone:"Telephone number",address:"Physical address",nursery:"Nursery",primary:"Primary school",levels:"Classes",weekday:"Weekday"};
 function friendly(key:string){return labels[key]??key.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}
@@ -21,6 +22,6 @@ export function FriendlySettingForm({setting}:{setting:Setting}){
  const editValue=(next:unknown)=>{setValue(next);setDraft(JSON.stringify(next,null,2));setJsonError("")};
  const valid=isSimple(value)||record(value)||Array.isArray(value);
  return <section className="border bg-white p-6"><div className="mb-4"><h3 className="font-heading text-lg font-bold text-brand-900">{friendly(setting.key)}</h3><p className="mt-1 text-sm text-muted-foreground">Edit the information below, then select Save changes.</p></div><form action={saveSettingAction} className="space-y-4"><input type="hidden" name="id" value={setting.id}/><input type="hidden" name="value" value={JSON.stringify(value)}/>{advanced?<div><label className="mb-2 block text-sm font-semibold" htmlFor={setting.id+"-json"}>Advanced configuration (JSON)</label><textarea id={setting.id+"-json"} rows={10} className="w-full border p-3 font-mono text-xs" value={draft} onChange={e=>{const next=e.target.value;setDraft(next);try{const parsed=JSON.parse(next);if(parsed===null)throw Error("Value cannot be null");setValue(parsed);setJsonError("")}catch{setJsonError("Invalid JSON. Correct the format before saving.")}}}/>{jsonError&&<p role="alert" className="mt-2 text-sm text-red-700">{jsonError}</p>}</div>:<EditableField name={setting.key} value={value} onChange={editValue}/>}
- <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="is_public" defaultChecked={setting.is_public}/> Allow this information to be used on the public website</label>
+ <FormCheckbox name="is_public" label="Allow this information to be used on the public website" defaultChecked={setting.is_public} />
  <div className="flex flex-wrap items-center gap-4"><SubmitButton disabled={!valid||!!jsonError}>Save changes</SubmitButton><button type="button" onClick={()=>{setAdvanced(!advanced);setDraft(JSON.stringify(value,null,2));setJsonError("")}} className="text-xs font-semibold text-brand-800 underline">{advanced?"Use simple editor":"Advanced editor"}</button></div></form></section>;
 }
