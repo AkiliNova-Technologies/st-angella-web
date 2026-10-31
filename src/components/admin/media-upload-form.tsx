@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { FileText, Image as ImageIcon, UploadCloud, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SubmitButton } from "@/components/admin/submit-button";
 import { uploadMediaAction } from "@/app/admin/media/actions";
 
@@ -10,6 +11,8 @@ const LIMIT = 8 * 1024 * 1024;
 
 export function MediaUploadForm({ categories }: { categories: { id: string; name: string }[] }) {
   const input = useRef<HTMLInputElement>(null);
+  const [category, setCategory] = useState("");
+  const [pupils, setPupils] = useState("yes");
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
@@ -55,8 +58,8 @@ export function MediaUploadForm({ categories }: { categories: { id: string; name
         <button type="button" aria-label="Remove selected file" onClick={() => choose()} className="border p-2 hover:bg-white"><X aria-hidden="true" className="size-4" /></button>
       </div>}
     </div>
-    <div><label htmlFor="media-category" className="block text-sm font-bold">Category</label><select id="media-category" name="category_id" className="mt-2 min-h-11 w-full border bg-white px-2 text-sm"><option value="">Uncategorized</option>{categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select></div>
-    <div><label htmlFor="media-pupils" className="block text-sm font-bold">Does this contain identifiable pupils?</label><select id="media-pupils" name="contains_pupils" required className="mt-2 min-h-11 w-full border bg-white px-2 text-sm"><option value="yes">Yes — keep private pending consent</option><option value="no">No</option></select></div>
+    <div><label id="category-label" className="mb-2 block text-sm font-bold">Category</label><input type="hidden" name="category_id" value={category} /><Select value={category} onValueChange={v => setCategory(v ?? "")}><SelectTrigger aria-labelledby="category-label"><SelectValue placeholder="Uncategorized" /></SelectTrigger><SelectContent><SelectItem value="">Uncategorized</SelectItem>{categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>
+    <div><label id="pupils-label" className="mb-2 block text-sm font-bold">Does this contain identifiable pupils?</label><input type="hidden" name="contains_pupils" value={pupils} /><Select value={pupils} onValueChange={v => setPupils(v ?? "yes")}><SelectTrigger aria-labelledby="pupils-label"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="yes">Yes — keep private pending consent</SelectItem><SelectItem value="no">No</SelectItem></SelectContent></Select></div>
     <div className="sm:col-span-2"><label htmlFor="media-alt" className="block text-sm font-bold">Alternative text</label><input id="media-alt" name="alt_text" maxLength={500} className="mt-2 min-h-11 w-full border px-3 text-sm" placeholder="Describe the image for accessibility" /></div>
     <div className="sm:col-span-2"><SubmitButton className="bg-brand-800 px-5 py-3 text-sm font-bold text-white">Upload privately</SubmitButton></div>
   </form>;
