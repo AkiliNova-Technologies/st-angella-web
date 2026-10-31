@@ -7,8 +7,6 @@ import { InteriorHero } from "@/components/sections/interior-hero";
 import { ContentSection } from "@/components/sections/content-section";
 
 export const metadata: Metadata = { title: "News & events", description: "Published news and events from St. Angella School." };
-export const dynamic = "force-dynamic";
-
 export default async function NewsPage() {
   const env = publicEnv();
   const client = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
