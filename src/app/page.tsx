@@ -6,8 +6,6 @@ import { NewsHome } from "@/components/home/news-home";
 import { Programmes } from "@/components/home/programmes";
 import { AdmissionsCta } from "@/components/sections/admissions-cta";
 
-export const dynamic = "force-dynamic";
-
 export default function HomePage() {
   return <>
     <Hero />
