@@ -60,6 +60,50 @@ export async function updateNewsAction(id: string, formData: FormData) {
   redirectWith(`/admin/news/${current.id}`, "saved");
 }
 
+
+const eventFieldsSchema = z.object({
+  title: z.string().trim().min(2).max(200),
+  slug: slugSchema,
+  summary: z.string().trim().min(10).max(500),
+  starts_at: z.string().min(16),
+  ends_at: z.string().optional(),
+  location: z.string().trim().max(240).optional(),
+});
+function eventValues(formData: FormData) {
+  const values = eventFieldsSchema.parse(Object.fromEntries(["title", "slug", "summary", "starts_at", "ends_at", "location"].map((key) => [key, String(formData.get(key) ?? "")])));
+  const parseDate = (value: string) => {
+    const date = new Date(value + ":00+03:00");
+    if (Number.isNaN(date.getTime())) throw new Error("Invalid event date");
+    return date.toISOString();
+  };
+  const starts_at = parseDate(values.starts_at);
+  const ends_at = values.ends_at ? parseDate(values.ends_at) : null;
+  if (ends_at && ends_at <= starts_at) throw new Error("Event end must follow start");
+  return { title: values.title, slug: values.slug, summary: values.summary, starts_at, ends_at, location: values.location || null, body: parseBody(formData.get("body")) };
+}
+export async function createEventAction(formData: FormData) {
+  const staff = await requireStaff();
+  if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
+  const values = eventValues(formData);
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("school_events").insert({ ...values, created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
+  if (error || !data) redirectWith("/admin/events/new", "error");
+  revalidatePath("/admin/events");
+  redirectWith(`/admin/events/${data.id}`, "created");
+}
+export async function updateEventAction(id: string, formData: FormData) {
+  const staff = await requireStaff();
+  if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
+  const values = eventValues(formData);
+  const supabase = await createSupabaseServerClient();
+  const { data: current } = await supabase.from("school_events").select("id, created_by_id, status").eq("id", idSchema.parse(id)).single();
+  if (!current || !["DRAFT", "IN_REVIEW"].includes(current.status) || (current.created_by_id !== staff.profileId && !staff.roles.includes("SUPER_ADMIN"))) redirect("/admin/forbidden");
+  const { error } = await supabase.from("school_events").update(values).eq("id", current.id);
+  if (error) redirectWith(`/admin/events/${current.id}`, "error");
+  revalidatePath("/admin/events"); revalidatePath(`/admin/events/${current.id}`);
+  redirectWith(`/admin/events/${current.id}`, "saved");
+}
+
 export async function transitionContentAction(entityInput: string, idInput: string, targetInput: string) {
   const staff = await requireStaff();
   const entity = entitySchema.parse(entityInput); const id = idSchema.parse(idInput); const target = statusSchema.parse(targetInput);

@@ -9,7 +9,7 @@ const navigation: { href: string; label: string; icon: typeof LayoutDashboard; e
   { href: "/admin", label: "Overview", icon: LayoutDashboard, enabled: true },
   { href: "/admin/pages", label: "Pages", icon: FileText, enabled: true },
   { href: "/admin/news", label: "News", icon: Newspaper, enabled: true },
-  { href: "/admin/events", label: "Events", icon: CalendarDays, enabled: false },
+  { href: "/admin/events", label: "Events", icon: CalendarDays, enabled: true },
   { href: "/admin/media", label: "Media Library", icon: Images, enabled: false },
   { href: "/admin/staff", label: "Staff", icon: Users, enabled: true, superOnly: true },
   { href: "/admin/enquiries", label: "Enquiries", icon: Mail, enabled: false },

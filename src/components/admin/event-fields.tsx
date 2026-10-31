@@ -1,0 +1,8 @@
+export function EventFields({ record, disabled = false }: { record?: { summary: string; starts_at: string; ends_at: string | null; location: string | null }; disabled?: boolean }) {
+  const local = (value?: string | null) => value ? new Intl.DateTimeFormat("sv-SE", { timeZone: "Africa/Kampala", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(value)).replace(" ", "T") : "";
+  return <>
+    <div><label htmlFor="summary" className="text-sm font-bold">Summary</label><textarea id="summary" name="summary" defaultValue={record?.summary} disabled={disabled} required minLength={10} maxLength={500} rows={3} className="mt-2 w-full border p-3 disabled:bg-background-warm" /></div>
+    <div className="grid gap-5 sm:grid-cols-2"><div><label htmlFor="starts_at" className="text-sm font-bold">Starts (Kampala time)</label><input id="starts_at" name="starts_at" type="datetime-local" defaultValue={local(record?.starts_at)} disabled={disabled} required className="mt-2 min-h-12 w-full border px-3 disabled:bg-background-warm" /></div><div><label htmlFor="ends_at" className="text-sm font-bold">Ends (optional)</label><input id="ends_at" name="ends_at" type="datetime-local" defaultValue={local(record?.ends_at)} disabled={disabled} className="mt-2 min-h-12 w-full border px-3 disabled:bg-background-warm" /></div></div>
+    <div><label htmlFor="location" className="text-sm font-bold">Location (optional)</label><input id="location" name="location" defaultValue={record?.location ?? ""} disabled={disabled} maxLength={240} className="mt-2 min-h-12 w-full border px-3 disabled:bg-background-warm" /></div>
+  </>;
+}
