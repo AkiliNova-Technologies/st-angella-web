@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { CalendarDays, FileText, Images, LayoutDashboard, Mail, Newspaper, Settings, Users } from "lucide-react";
+import { Trash2, CalendarDays, FileText, Images, LayoutDashboard, Mail, Newspaper, Settings, Users } from "lucide-react";
 import { logoutAction } from "@/app/admin/actions";
 import type { StaffRole } from "@/lib/auth/permissions";
 
@@ -12,6 +12,7 @@ const navigation: { href: string; label: string; icon: typeof LayoutDashboard; e
   { href: "/admin/news", label: "News", icon: Newspaper, enabled: true },
   { href: "/admin/events", label: "Events", icon: CalendarDays, enabled: true },
   { href: "/admin/media", label: "Media Library", icon: Images, enabled: true },
+  { href: "/admin/trash", label: "Trash", icon: Trash2, superOnly: true },
   { href: "/admin/staff", label: "Staff", icon: Users, enabled: true, superOnly: true },
   { href: "/admin/enquiries", label: "Enquiries", icon: Mail, enabled: true, superOnly: true },
   { href: "/admin/settings", label: "Settings", icon: Settings, enabled: true, superOnly: true },
