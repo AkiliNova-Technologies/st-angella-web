@@ -72,23 +72,10 @@ export async function deleteUnusedMediaAction(formData: FormData) {
   const { data: asset, error } = await admin.from("media_assets").select("id,bucket,object_path,is_approved,is_public").eq("id",parsed.data).single();
   if (error || !asset) redirect("/admin/media?error=notfound");
   if (asset.is_approved || asset.is_public) redirect("/admin/media?error=protected");
-  const checks = await Promise.all([
-    admin.from("news_articles").select("id").eq("featured_media_id",asset.id).limit(1),
-    admin.from("school_events").select("id").eq("featured_media_id",asset.id).limit(1),
-    admin.from("media_consent_records").select("id").eq("media_asset_id",asset.id).limit(1),
-  ]);
-  if (checks.some(result=>result.error)) redirect("/admin/media?error=references");
-  if (checks.some(result=>(result.data?.length ?? 0)>0)) redirect("/admin/media?error=inuse");
-  // Do not delete a storage object until every known database reference has been checked.
-  const { error: storageError } = await admin.storage.from(asset.bucket).remove([asset.object_path]);
-  if (storageError) redirect("/admin/media?error=storage");
-  const { error: deleteError } = await admin.from("media_assets").delete().eq("id",asset.id).eq("is_approved",false).eq("is_public",false);
-  if (deleteError) {
-    console.error("Media metadata deletion failed after storage removal", { assetId:asset.id, code:deleteError.code });
-    redirect("/admin/media?error=record");
-  }
-  const audit = await admin.from("audit_logs").insert({ actor_id:staff.profileId, action:"MEDIA_DELETED", entity_type:"media_assets", entity_id:asset.id, metadata:{ bucket:asset.bucket } });
-  if (audit.error) console.error("Media deletion audit failed",audit.error.code);
+  // Fail closed: permanent storage deletion is disabled until reference checks
+  // and database/storage cleanup can be performed as a recoverable workflow.
+  // Existing media records and storage objects remain untouched.
+  redirect("/admin/media?error=deletion_disabled");
   revalidatePath("/admin/media");
   redirect("/admin/media?deleted=1");
 }
