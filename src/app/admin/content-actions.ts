@@ -20,6 +20,14 @@ function parseBody(value: FormDataEntryValue | null) {
   return { html: text };
 }
 
+async function selectedFeaturedMedia(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, value: FormDataEntryValue | null) {
+  const id = z.union([z.literal(""), z.string().uuid()]).parse(value ?? "");
+  if (!id) return null;
+  const { data, error } = await supabase.from("media_assets").select("id").eq("id", id).eq("kind", "IMAGE").single();
+  if (error || !data) throw new Error("Selected media is unavailable");
+  return data.id;
+}
+
 function redirectWith(path: string, kind: "saved" | "created" | "transitioned" | "reviewed" | "error"): never {
   redirect(`${path}?${kind}=1`);
 }
@@ -54,7 +62,8 @@ export async function createNewsAction(formData: FormData) {
   if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
   const values = z.object({ title: z.string().trim().min(2).max(200), slug: slugSchema, summary: z.string().trim().min(10).max(500) }).parse({ title: formData.get("title"), slug: formData.get("slug"), summary: formData.get("summary") });
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("news_articles").insert({ ...values, body: parseBody(formData.get("body")), created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
+  const featured_media_id = await selectedFeaturedMedia(supabase, formData.get("featured_media_id"));
+  const { data, error } = await supabase.from("news_articles").insert({ ...values, featured_media_id, body: parseBody(formData.get("body")), created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
   if (error || !data) redirectWith("/admin/news/new", "error");
   revalidatePath("/admin/news");
   redirectWith(`/admin/news/${data.id}`, "created");
@@ -67,7 +76,8 @@ export async function updateNewsAction(id: string, formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: current } = await supabase.from("news_articles").select("id, created_by_id, status").eq("id", idSchema.parse(id)).single();
   if (!current || !["DRAFT", "IN_REVIEW"].includes(current.status) || (current.created_by_id !== staff.profileId && !staff.roles.includes("SUPER_ADMIN"))) redirect("/admin/forbidden");
-  const { error } = await supabase.from("news_articles").update({ ...values, body: parseBody(formData.get("body")) }).eq("id", current.id);
+  const featured_media_id = await selectedFeaturedMedia(supabase, formData.get("featured_media_id"));
+  const { error } = await supabase.from("news_articles").update({ ...values, featured_media_id, body: parseBody(formData.get("body")) }).eq("id", current.id);
   if (error) redirectWith(`/admin/news/${current.id}`, "error");
   revalidatePath("/admin/news"); revalidatePath(`/admin/news/${current.id}`);
   redirectWith(`/admin/news/${current.id}`, "saved");
@@ -99,7 +109,8 @@ export async function createEventAction(formData: FormData) {
   if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
   const values = eventValues(formData);
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("school_events").insert({ ...values, created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
+  const featured_media_id = await selectedFeaturedMedia(supabase, formData.get("featured_media_id"));
+  const { data, error } = await supabase.from("school_events").insert({ ...values, featured_media_id, created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
   if (error || !data) redirectWith("/admin/events/new", "error");
   revalidatePath("/admin/events");
   redirectWith(`/admin/events/${data.id}`, "created");
@@ -111,7 +122,8 @@ export async function updateEventAction(id: string, formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: current } = await supabase.from("school_events").select("id, created_by_id, status").eq("id", idSchema.parse(id)).single();
   if (!current || !["DRAFT", "IN_REVIEW"].includes(current.status) || (current.created_by_id !== staff.profileId && !staff.roles.includes("SUPER_ADMIN"))) redirect("/admin/forbidden");
-  const { error } = await supabase.from("school_events").update(values).eq("id", current.id);
+  const featured_media_id = await selectedFeaturedMedia(supabase, formData.get("featured_media_id"));
+  const { error } = await supabase.from("school_events").update({ ...values, featured_media_id }).eq("id", current.id);
   if (error) redirectWith(`/admin/events/${current.id}`, "error");
   revalidatePath("/admin/events"); revalidatePath(`/admin/events/${current.id}`);
   redirectWith(`/admin/events/${current.id}`, "saved");
