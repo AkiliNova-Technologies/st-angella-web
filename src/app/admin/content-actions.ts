@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { hasPermission } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const idSchema = z.string().uuid();
 const slugSchema = z.string().trim().min(2).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -150,4 +151,24 @@ export async function reviewContentAction(entityInput: string, idInput: string, 
   }
   revalidatePath("/admin"); revalidatePath(basePath); revalidatePath(`${basePath}/${id}`);
   redirectWith(`${basePath}/${id}`, "reviewed");
+}
+
+const protectedPageSlugs = new Set(["home", "about", "academics", "admissions", "contact", "school-life", "gallery", "news", "events"]);
+export async function manageContentDeletionAction(entityInput: string, idInput: string, operationInput: string) {
+  const staff = await requireStaff(["SUPER_ADMIN"]);
+  const entity = entitySchema.parse(entityInput), id = idSchema.parse(idInput);
+  const operation = z.enum(["trash", "restore"]).parse(operationInput);
+  const admin = createSupabaseAdminClient(), table = tableByEntity[entity], path = pathByEntity[entity];
+  const { data: current, error: loadError } = await admin.from(table).select("id,title,slug,status,deleted_at").eq("id",id).single();
+  if (loadError || !current) redirect(path + "?error=notfound");
+  if (entity === "PAGE" && protectedPageSlugs.has(current.slug)) redirect(path + "?error=protected");
+  if (operation === "trash" && current.deleted_at) redirect(path + "?error=invalid");
+  if (operation === "restore" && !current.deleted_at) redirect("/admin/trash?error=invalid");
+  const changes = operation === "trash" ? { deleted_at: new Date().toISOString(), status: "ARCHIVED" } : { deleted_at: null, status: "DRAFT", published_at: null };
+  const { error } = await admin.from(table).update(changes).eq("id",id);
+  if (error) { console.error("Content deletion failed",{entity,id,code:error.code}); redirect(path + "?error=update"); }
+  const { error: auditError } = await admin.from("audit_logs").insert({ actor_id: staff.profileId, action: operation === "trash" ? "CONTENT_TRASHED" : "CONTENT_RESTORED", entity_type: table, entity_id: id, metadata: { title: current.title, previous_status: current.status } });
+  if (auditError) console.error("Content deletion audit failed", { entity, id, code: auditError.code });
+  revalidatePath("/admin"); revalidatePath(path); revalidatePath(path + "/" + id); revalidatePath("/admin/trash");
+  redirect(operation === "trash" ? path + "?deleted=1" : "/admin/trash?restored=1");
 }
