@@ -101,6 +101,7 @@ model PageContent {
   body Json
   status ContentStatus @default(DRAFT)
   createdById String @map("created_by_id") @db.Uuid
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
   publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
