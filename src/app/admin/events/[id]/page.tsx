@@ -8,7 +8,9 @@ import { requireStaff } from "@/lib/auth/require-staff";
 import type { ContentStatus } from "@/lib/content/lifecycle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default async function EventEditor({ params }: { params: Promise<{ id: string }> }) {
+export default async function EventEditor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; created?: string; reviewed?: string; transitioned?: string; error?: string }> }) {
+  const feedbackParams = await searchParams;
+  const feedback = (["error", "saved", "created", "reviewed", "transitioned"] as const).find((key) => feedbackParams[key]) ;
   const staff = await requireStaff(); const { id } = await params;
   const supabase = await createSupabaseServerClient();
   const [{ data: record }, { data: revisions }] = await Promise.all([
@@ -18,7 +20,7 @@ export default async function EventEditor({ params }: { params: Promise<{ id: st
   if (!record) notFound();
   const canEdit = (staff.roles.includes("EDITOR") || staff.roles.includes("SUPER_ADMIN")) && ["DRAFT", "IN_REVIEW"].includes(record.status) && (record.created_by_id === staff.profileId || staff.roles.includes("SUPER_ADMIN"));
   return <AdminShell title={record.title} staff={staff} breadcrumbs={[{ label: "Events", href: "/admin/events" }, { label: record.title }]}>
-    <ContentEditor record={{ ...record, status: record.status as ContentStatus }} entity="SCHOOL_EVENT" roles={staff.roles} profileId={staff.profileId} saveAction={updateEventAction.bind(null, id)} revisions={(revisions ?? []) as never}>
+    <ContentEditor record={{ ...record, status: record.status as ContentStatus }} entity="SCHOOL_EVENT" roles={staff.roles} profileId={staff.profileId} saveAction={updateEventAction.bind(null, id)} revisions={(revisions ?? []) as never} feedback={feedback}>
       <EventFields record={record} disabled={!canEdit} />
     </ContentEditor>
   </AdminShell>;
