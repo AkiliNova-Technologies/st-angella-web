@@ -33,7 +33,6 @@ export function ContentEditor({ record, entity, roles, profileId, saveAction, re
   const review = reviewContentAction.bind(null, entity, record.id);
   return <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
     <section className="border bg-white">
-      <div className="border-b px-6 py-3"><Link href={backHref} className="text-sm font-semibold text-brand-800 underline">← Back to {entity === "PAGE" ? "pages" : entity === "NEWS_ARTICLE" ? "news" : "events"}</Link></div>
       {feedback && <p role={feedback === "error" ? "alert" : "status"} className={`m-5 border-l-4 p-4 text-sm ${feedback === "error" ? "border-destructive bg-red-50" : "border-brand-800 bg-background-soft"}`}>{feedback === "error" ? "Action failed. Please review the record and try again." : feedback === "saved" ? "Changes saved." : feedback === "created" ? "Draft created." : feedback === "reviewed" ? "Review recorded." : "Workflow status updated."}</p>}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b px-6 py-5"><div><h2 className="font-heading text-xl font-bold text-brand-900">Content</h2><p className="mt-1 text-xs text-muted-foreground">Last updated {new Intl.DateTimeFormat("en-UG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(record.updated_at))}</p></div><StatusBadge status={record.status} /></div>
       <form action={saveAction} className="space-y-5 p-6">
@@ -41,7 +40,7 @@ export function ContentEditor({ record, entity, roles, profileId, saveAction, re
         <div><label htmlFor="slug" className="text-sm font-bold">Slug</label><input id="slug" name="slug" defaultValue={record.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" disabled={!canEdit} className="mt-2 min-h-12 w-full border bg-white px-3 disabled:bg-background-warm" /></div>
         {children}
         <RichTextEditor initialValue={initialHtml} disabled={!canEdit} />
-        {canEdit ? <SubmitButton>Save changes</SubmitButton> : <p className="border-l-4 border-accent-gold bg-background-warm p-4 text-sm">This record is read-only in its current state or for your role.</p>}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-5"><Link href={backHref} className="inline-flex min-h-11 items-center border border-brand-800 px-5 py-3 text-sm font-bold text-brand-800 hover:bg-background-warm">← Back to {entity === "PAGE" ? "pages" : entity === "NEWS_ARTICLE" ? "news" : "events"}</Link>{canEdit ? <SubmitButton>Save changes</SubmitButton> : <span className="text-sm text-muted-foreground">Read-only in this state or for your role.</span>}</div>
       </form>
     </section>
     <aside className="space-y-6">
