@@ -1,4 +1,4 @@
-import { FileText, ImageIcon, ShieldCheck, ShieldAlert } from "lucide-react";
+import { FileText, ShieldCheck, ShieldAlert } from "lucide-react";
 import { FormSelect } from "@/components/admin/form-select";
 import { MediaUploadForm } from "@/components/admin/media-upload-form";
 import { AdminPagination, parseTablePagination } from "@/components/admin/data-table";
@@ -31,9 +31,7 @@ export default async function MediaAdmin({ searchParams }: { searchParams: Promi
       const filename = asset.object_path.split("/").at(-1) ?? "Media file";
       const categoryName = categories?.find(category => category.id === asset.category_id)?.name ?? "Uncategorized";
       return <article key={asset.id} className="min-w-0 overflow-hidden border border-border bg-white">
-        <div className="flex aspect-[4/3] items-center justify-center border-b bg-background-warm" aria-label={asset.kind === "IMAGE" ? "Private image; preview unavailable" : "Document"}>
-          {asset.kind === "IMAGE" ? <ImageIcon aria-hidden="true" className="size-14 text-brand-800/60" /> : <FileText aria-hidden="true" className="size-14 text-brand-800/60" />}
-        </div>
+        <div className="flex aspect-[4/3] items-center justify-center overflow-hidden border-b bg-background-warm">{asset.kind === "IMAGE" ? <img src={`/admin/media/preview/${asset.id}`} alt={asset.alt_text || "Private media image"} loading="lazy" className="h-full w-full object-contain" /> : <FileText aria-label="PDF document" className="size-14 text-brand-800/60" />}</div>
         <div className="space-y-3 p-4">
           <div><h3 title={filename} className="truncate font-semibold text-brand-900">{filename}</h3><p className="mt-1 text-xs text-muted-foreground">{categoryName} · {(asset.byte_size / 1024 / 1024).toFixed(2)} MB · {new Date(asset.created_at).toLocaleDateString("en-UG", { day: "numeric", month: "short", year: "numeric" })}</p></div>
           <div className="flex flex-wrap gap-2 text-xs"><span className="border px-2 py-1 font-semibold text-brand-800">{asset.is_approved ? "Approved" : "Pending approval"}</span><span className="inline-flex items-center gap-1 border px-2 py-1">{asset.contains_pupils ? <ShieldAlert className="size-3" aria-hidden="true" /> : <ShieldCheck className="size-3" aria-hidden="true" />}{asset.contains_pupils ? "Pupil consent required" : "Private"}</span></div>
