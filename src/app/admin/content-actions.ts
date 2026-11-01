@@ -131,6 +131,34 @@ export async function updateEventAction(id: string, formData: FormData) {
   redirectWith(`/admin/events/${current.id}`, "saved");
 }
 
+
+/** Reopen approved news or events for editing. The approval is no longer usable
+ * until a fresh revision receives independent review. */
+export async function reopenApprovedContentAction(entityInput: string, idInput: string) {
+  const staff = await requireStaff(["SUPER_ADMIN"]);
+  const entity = z.enum(["NEWS_ARTICLE", "SCHOOL_EVENT"]).parse(entityInput);
+  const id = idSchema.parse(idInput);
+  const table = tableByEntity[entity];
+  const path = `${pathByEntity[entity]}/${id}`;
+  const admin = createSupabaseAdminClient();
+  const { data: current, error: loadError } = await admin.from(table)
+    .select("id,status,deleted_at").eq("id", id).single();
+  if (loadError || !current || current.deleted_at || current.status !== "APPROVED") redirectWith(path, "error");
+  const { data: updated, error } = await admin.from(table)
+    .update({ status: "DRAFT", published_at: null })
+    .eq("id", id).eq("status", "APPROVED").is("deleted_at", null)
+    .select("id").maybeSingle();
+  if (error || !updated) {
+    console.error("Reopen approved content failed", { entity, id, code: error?.code });
+    redirectWith(path, "error");
+  }
+  // The status change is also captured by the existing database audit trigger.
+  revalidatePath("/admin");
+  revalidatePath(pathByEntity[entity]);
+  revalidatePath(path);
+  redirect(`${path}?reopened=1`);
+}
+
 export async function transitionContentAction(entityInput: string, idInput: string, targetInput: string) {
   const staff = await requireStaff();
   const entity = entitySchema.parse(entityInput); const id = idSchema.parse(idInput); const target = statusSchema.parse(targetInput);
