@@ -62,3 +62,23 @@ export async function uploadMediaAction(formData: FormData) {
   revalidatePath("/admin/media");
   redirect("/admin/media?uploaded=1");
 }
+
+/** Upload an image from a content editor without redirecting or publishing it. */
+export async function uploadEditorImageAction(formData: FormData): Promise<{id?:string;object_path?:string;alt_text?:string|null;is_approved?:boolean;error?:string}> {
+  const staff = await requireStaff();
+  if (!hasPermission(staff.roles, "media:manage") || !staff.roles.some(role => role === "EDITOR" || role === "SUPER_ADMIN")) return {error:"Not authorized to upload images."};
+  const file = formData.get("file");
+  const alt = z.string().trim().min(1).max(500).safeParse(formData.get("alt_text"));
+  const pupils = z.enum(["yes","no"]).safeParse(formData.get("contains_pupils"));
+  if (!(file instanceof File) || !["image/jpeg","image/png","image/webp"].includes(file.type) || file.size < 1 || file.size > MAX_UPLOAD || !alt.success || !pupils.success) return {error:"Choose a JPEG, PNG or WebP image under 8 MB and provide alternative text and pupil consent classification."};
+  const bucket = process.env.MEDIA_PRIVATE_BUCKET || "school-photography";
+  if (!["school-photography","news-images","gallery-images","brand-assets"].includes(bucket)) return {error:"Private media storage is not configured."};
+  const supabase = await createSupabaseServerClient();
+  const path = staff.userId + "/" + crypto.randomUUID() + "." + ALLOWED.get(file.type);
+  const {error: uploadError} = await supabase.storage.from(bucket).upload(path,file,{contentType:file.type,upsert:false});
+  if (uploadError) return {error:"Unable to upload image."};
+  const {data,error} = await supabase.from("media_assets").insert({bucket,object_path:path,kind:"IMAGE",mime_type:file.type,byte_size:file.size,alt_text:alt.data,uploaded_by_id:staff.profileId,contains_pupils:pupils.data==="yes",is_approved:false,is_public:false}).select("id,object_path,alt_text,is_approved").single();
+  if (error || !data) { await supabase.storage.from(bucket).remove([path]); return {error:"Unable to register uploaded image."}; }
+  revalidatePath("/admin/media");
+  return data;
+}
