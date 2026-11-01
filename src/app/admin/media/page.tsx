@@ -8,7 +8,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminEmptyState } from "@/components/admin/empty-state";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { updateMediaMetadataAction } from "./actions";
+import { updateMediaMetadataAction, reviewMediaAction } from "./actions";
 
 export default async function MediaAdmin({ searchParams }: { searchParams: Promise<{ saved?: string; uploaded?: string; error?: string; page?: string; pageSize?: string }> }) {
   const staff = await requireStaff(); const params = await searchParams; const { page, pageSize } = parseTablePagination(params);
