@@ -1,3 +1,4 @@
+export const instant = false;
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
