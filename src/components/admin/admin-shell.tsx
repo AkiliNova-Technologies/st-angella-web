@@ -12,6 +12,7 @@ const navigation: { href: string; label: string; icon: typeof LayoutDashboard; e
   { href: "/admin/news", label: "News", icon: Newspaper, enabled: true },
   { href: "/admin/events", label: "Events", icon: CalendarDays, enabled: true },
   { href: "/admin/reviews", label: "Reviews", icon: ClipboardCheck, enabled: true, reviewerOnly: true },
+  { href: "/admin/gallery", label: "Gallery", icon: Images, enabled: true },
   { href: "/admin/media", label: "Media Library", icon: Images, enabled: true },
   { href: "/admin/trash", label: "Trash", icon: Trash2, enabled: true, superOnly: true },
   { href: "/admin/staff", label: "Staff", icon: Users, enabled: true, superOnly: true },
