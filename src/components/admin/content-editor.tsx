@@ -5,7 +5,7 @@ import { SubmitButton } from "./submit-button";
 import type { StaffRole } from "@/lib/auth/permissions";
 import type { ContentStatus } from "@/lib/content/lifecycle";
 import { StatusBadge } from "./status-badge";
-import { reviewContentAction, transitionContentAction } from "@/app/admin/content-actions";
+import { reopenApprovedContentAction, reviewContentAction, transitionContentAction } from "@/app/admin/content-actions";
 
 type Revision = { id: string; revision_number: number; created_at: string; author_id: string; staff_profiles: { display_name: string } | null; content_reviews: { id: string; decision: string; notes: string | null; created_at: string; staff_profiles: { display_name: string } | null }[] };
 
@@ -18,7 +18,7 @@ export function ContentEditor({ record, entity, roles, profileId, saveAction, re
   revisions?: Revision[];
   children?: React.ReactNode;
   structured?: boolean;
-  feedback?: "saved" | "created" | "transitioned" | "reviewed" | "error";
+  feedback?: "saved" | "created" | "transitioned" | "reviewed" | "reopened" | "error";
 }) {
   const backHref = entity === "PAGE" ? "/admin/pages" : entity === "NEWS_ARTICLE" ? "/admin/news" : "/admin/events";
   const bodyValue = record.body && typeof record.body === "object" ? record.body as { html?: string; text?: string } : null;
@@ -30,12 +30,14 @@ export function ContentEditor({ record, entity, roles, profileId, saveAction, re
   const latest = revisions[0];
   const canReview = record.status === "IN_REVIEW" && latest && latest.author_id !== profileId && record.created_by_id !== profileId && (roles.includes("REVIEWER") || isSuper);
   const canPublish = record.status === "APPROVED" && record.created_by_id !== profileId && (roles.includes("REVIEWER") || isSuper) && Boolean(latest?.content_reviews.some(item => item.decision === "APPROVED"));
+  const canReopen = isSuper && record.status === "APPROVED" && entity !== "PAGE";
+  const reopen = reopenApprovedContentAction.bind(null, entity, record.id);
   const canArchive = record.status === "PUBLISHED" && (roles.includes("REVIEWER") || isSuper);
   const transition = transitionContentAction.bind(null, entity, record.id);
   const review = reviewContentAction.bind(null, entity, record.id);
   return <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
     <section className="border bg-white">
-      {feedback && <p role={feedback === "error" ? "alert" : "status"} className={`m-5 border-l-4 p-4 text-sm ${feedback === "error" ? "border-destructive bg-red-50" : "border-brand-800 bg-background-soft"}`}>{feedback === "error" ? "Action failed. Please review the record and try again." : feedback === "saved" ? "Changes saved." : feedback === "created" ? "Draft created." : feedback === "reviewed" ? "Review recorded." : "Workflow status updated."}</p>}
+      {feedback && <p role={feedback === "error" ? "alert" : "status"} className={`m-5 border-l-4 p-4 text-sm ${feedback === "error" ? "border-destructive bg-red-50" : "border-brand-800 bg-background-soft"}`}>{feedback === "error" ? "Action failed. Please review the record and try again." : feedback === "reopened" ? "Article or event returned to Draft. Make your changes and submit for a new independent review." : feedback === "saved" ? "Changes saved." : feedback === "created" ? "Draft created." : feedback === "reviewed" ? "Review recorded." : "Workflow status updated."}</p>}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b px-6 py-5"><div><h2 className="font-heading text-xl font-bold text-brand-900">Content</h2><p className="mt-1 text-xs text-muted-foreground">Last updated {new Intl.DateTimeFormat("en-UG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(record.updated_at))}</p></div><StatusBadge status={record.status} /></div>
       {structured ? <div className="p-6"><p className="text-sm text-muted-foreground">Content is edited in the page sections above. The page route and title are fixed to preserve navigation.</p><Link href={backHref} className="mt-4 inline-flex border border-brand-800 px-4 py-3 text-sm font-bold text-brand-800">Back to pages</Link></div> : <form action={saveAction} className="space-y-5 p-6">
         <div><label htmlFor="title" className="text-sm font-bold">Title</label><input id="title" name="title" defaultValue={record.title} required maxLength={200} disabled={!canEdit} className="mt-2 min-h-12 w-full border bg-white px-3 disabled:bg-background-warm" /></div>
@@ -50,8 +52,9 @@ export function ContentEditor({ record, entity, roles, profileId, saveAction, re
         {canSubmit && <form action={transition.bind(null, "IN_REVIEW")}><SubmitButton className="w-full bg-brand-800 px-4 py-3 text-sm font-bold text-white">Submit for review</SubmitButton></form>}
         {record.status === "IN_REVIEW" && !canReview && <p role="status" className="border-l-4 border-accent-gold bg-background-warm p-3 text-sm">Awaiting review by another authorized staff member. Once approved, an independent reviewer can publish this content.</p>}{canReturnToDraft && <form action={transition.bind(null, "DRAFT")}><SubmitButton className="w-full border border-brand-800 px-4 py-3 text-sm font-bold text-brand-800">Withdraw submission to draft</SubmitButton></form>}
         {record.status === "APPROVED" && !canPublish && <p className="border-l-4 border-accent-gold bg-background-warm p-3 text-sm">Approved. Awaiting publication by an authorized independent reviewer.</p>}{canPublish && <form action={transition.bind(null, "PUBLISHED")}><SubmitButton className="w-full bg-brand-800 px-4 py-3 text-sm font-bold text-white">Publish approved content</SubmitButton></form>}
+        {canReopen && <form action={reopen}><p className="mb-3 text-sm text-muted-foreground">Need to change the featured image or content? Return this approved item to Draft. Its previous approval will not authorize publication after editing; a new review is required.</p><SubmitButton className="w-full border border-brand-800 px-4 py-3 text-sm font-bold text-brand-800">Return to draft for editing</SubmitButton></form>}
         {canArchive && <form action={transition.bind(null, "ARCHIVED")}><SubmitButton className="w-full border border-brand-800 px-4 py-3 text-sm font-bold text-brand-800">Archive content</SubmitButton></form>}
-        {!canSubmit && !canReturnToDraft && !canPublish && !canArchive && <p className="text-sm text-muted-foreground">No lifecycle action is currently available to this account.</p>}
+        {!canSubmit && !canReturnToDraft && !canPublish && !canReopen && !canArchive && <p className="text-sm text-muted-foreground">No lifecycle action is currently available to this account.</p>}
       </div></section>
       {canReview && <section className="border border-accent-gold bg-white p-6"><h2 className="font-heading text-lg font-bold text-brand-900">Review submitted content</h2><p className="mt-2 text-sm text-muted-foreground">Approve to unlock publication, or request revisions. Only a reviewer who is not the author may approve.</p><form action={review} className="mt-5 space-y-4"><FormSelect name="decision" label="Decision" defaultValue="APPROVED" options={[{ value: "APPROVED", label: "Approve" }, { value: "REJECTED", label: "Request revision" }]} /><div><label htmlFor="notes" className="text-sm font-bold">Review notes</label><textarea id="notes" name="notes" maxLength={2000} rows={4} className="mt-2 w-full border p-3" /></div><SubmitButton className="w-full bg-accent-gold px-4 py-3 text-sm font-bold text-brand-900">Record review</SubmitButton></form></section>}
       <section className="border bg-white"><div className="border-b px-6 py-5"><h2 className="font-heading text-lg font-bold text-brand-900">Revision history</h2></div>{revisions.length ? <ol className="divide-y">{revisions.map((revision) => <li key={revision.id} className="px-6 py-4"><p className="text-sm font-bold">Revision {revision.revision_number}</p><p className="mt-1 text-xs text-muted-foreground">{revision.staff_profiles?.display_name ?? "Staff member"} · {new Intl.DateTimeFormat("en-UG", { dateStyle: "medium" }).format(new Date(revision.created_at))}</p>{revision.content_reviews.map((item) => <div key={item.id} className="mt-3 border-l-2 border-accent-gold pl-3 text-xs"><strong>{item.decision}</strong> by {item.staff_profiles?.display_name ?? "Reviewer"}{item.notes && <p className="mt-1 text-muted-foreground">{item.notes}</p>}</div>)}</li>)}</ol> : <p className="px-6 py-8 text-sm text-muted-foreground">No submitted revisions yet.</p>}</section>
