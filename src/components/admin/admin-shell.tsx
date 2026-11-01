@@ -7,9 +7,9 @@ import { Trash2, CalendarDays, FileText, Images, LayoutDashboard, Mail, Newspape
 import { logoutAction } from "@/app/admin/actions";
 import type { StaffRole } from "@/lib/auth/permissions";
 
-const navigation: { href: string; label: string; icon: typeof LayoutDashboard; enabled: boolean; superOnly?: boolean; reviewerOnly?: boolean }[] = [
+const navigation: { href: string; label: string; icon: typeof LayoutDashboard; enabled: boolean; hidden?: boolean; superOnly?: boolean; reviewerOnly?: boolean }[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, enabled: true },
-  { href: "/admin/pages", label: "Pages", icon: FileText, enabled: true },
+  { href: "/admin/pages", label: "Pages", icon: FileText, enabled: true, hidden: true },
   { href: "/admin/news", label: "News", icon: Newspaper, enabled: true },
   { href: "/admin/events", label: "Events", icon: CalendarDays, enabled: true },
   { href: "/admin/reviews", label: "Reviews", icon: ClipboardCheck, enabled: true, reviewerOnly: true },
@@ -32,7 +32,7 @@ type Props = {
 function Navigation({ roles }: { roles: StaffRole[] }) {
   const pathname = usePathname();
   return <nav aria-label="Administration navigation" className="space-y-1">
-    {navigation.filter((item) => (!item.superOnly || roles.includes("SUPER_ADMIN")) && (!item.reviewerOnly || roles.includes("REVIEWER") || roles.includes("SUPER_ADMIN"))).map(({ href, label, icon: Icon, enabled }) => enabled ? (
+    {navigation.filter((item) => !item.hidden && (!item.superOnly || roles.includes("SUPER_ADMIN")) && (!item.reviewerOnly || roles.includes("REVIEWER") || roles.includes("SUPER_ADMIN"))).map(({ href, label, icon: Icon, enabled }) => enabled ? (
       <Link key={href} href={href} aria-current={pathname === href || (href !== "/admin" && pathname.startsWith(href + "/")) ? "page" : undefined} className={`flex min-h-11 items-center gap-3 border-l-2 px-4 text-sm font-semibold transition-colors ${pathname === href || (href !== "/admin" && pathname.startsWith(href + "/")) ? "border-accent-gold bg-white/15 text-white" : "border-transparent text-white/80 hover:border-accent-gold hover:bg-white/10 hover:text-white"}`}>
         <Icon className="size-4" aria-hidden="true" />{label}
       </Link>
