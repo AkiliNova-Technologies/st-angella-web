@@ -8,8 +8,9 @@ import { requireStaff } from "@/lib/auth/require-staff";
 import type { ContentStatus } from "@/lib/content/lifecycle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default async function NewsEditor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; created?: string; reviewed?: string; transitioned?: string; error?: string; reopened?: string }> }) {
+export default async function NewsEditor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; created?: string; reviewed?: string; transitioned?: string; error?: string; reopened?: string; media_not_public?: string }> }) {
   const feedbackParams = await searchParams;
+  const mediaBlocked = Boolean(feedbackParams.media_not_public);
   const feedback = (["error", "saved", "created", "reviewed", "transitioned", "reopened"] as const).find((key) => feedbackParams[key]) ;
   const staff = await requireStaff(); const { id } = await params; const supabase = await createSupabaseServerClient(); const {data: featuredAssets} = await supabase.from("media_assets").select("id,alt_text,object_path,is_approved").eq("kind","IMAGE").order("created_at",{ascending:false}).limit(100);
   const [{ data: record }, { data: revisions }] = await Promise.all([
@@ -18,5 +19,5 @@ export default async function NewsEditor({ params, searchParams }: { params: Pro
   ]);
   if (!record) notFound(); const save = updateNewsAction.bind(null, id);
   const canEdit = (staff.roles.includes("EDITOR") || staff.roles.includes("SUPER_ADMIN")) && ["DRAFT", "IN_REVIEW"].includes(record.status) && (record.created_by_id === staff.profileId || staff.roles.includes("SUPER_ADMIN"));
-  return <AdminShell title={record.title} staff={staff} breadcrumbs={[{ label: "News", href: "/admin/news" }, { label: record.title }]}><ContentEditor record={{ ...record, status: record.status as ContentStatus }} entity="NEWS_ARTICLE" roles={staff.roles} profileId={staff.profileId} saveAction={save} revisions={(revisions ?? []) as never} feedback={feedback}><FeaturedMediaPicker assets={featuredAssets ?? []} selected={record.featured_media_id} disabled={!canEdit} /><div><label htmlFor="summary" className="text-sm font-bold">Summary</label><textarea id="summary" name="summary" defaultValue={record.summary} disabled={!canEdit} required minLength={10} maxLength={500} rows={3} className="mt-2 w-full border p-3" /></div></ContentEditor></AdminShell>;
+  return <AdminShell title={record.title} staff={staff} breadcrumbs={[{ label: "News", href: "/admin/news" }, { label: record.title }]}><>{mediaBlocked && <p role="alert" className="mb-5 border-l-4 border-destructive bg-red-50 p-4 text-sm">Publication blocked. The featured image must be approved and made public in Media Library, with pupil consent if required.</p>}<ContentEditor record={{ ...record, status: record.status as ContentStatus }} entity="NEWS_ARTICLE" roles={staff.roles} profileId={staff.profileId} saveAction={save} revisions={(revisions ?? []) as never} feedback={feedback}><FeaturedMediaPicker assets={featuredAssets ?? []} selected={record.featured_media_id} disabled={!canEdit} /><div><label htmlFor="summary" className="text-sm font-bold">Summary</label><textarea id="summary" name="summary" defaultValue={record.summary} disabled={!canEdit} required minLength={10} maxLength={500} rows={3} className="mt-2 w-full border p-3" /></div></ContentEditor></></AdminShell>;
 }
