@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AboutHome } from "@/components/home/about-home";
 import { Achievements } from "@/components/home/achievements";
 import { Hero } from "@/components/home/hero";
@@ -13,7 +14,7 @@ export default function HomePage() {
     <AboutHome />
     <Programmes />
     <Achievements />
-    <NewsHome />
+    <Suspense fallback={<section className="bg-white py-16" aria-label="Loading school news"><div className="mx-auto max-w-7xl px-5 text-sm text-muted-foreground">Loading latest school news…</div></section>}><NewsHome /></Suspense>
     <AdmissionsCta title="Give your child a strong start" description="Visit the admissions page to begin an enquiry. Application steps and requirements will be published only after verification by the school." />
   </>;
 }
