@@ -1,0 +1,36 @@
+"use client";
+import { useState } from "react";
+import { MoreHorizontal, X, FileText } from "lucide-react";
+import { FormSelect } from "@/components/admin/form-select";
+import { SubmitButton } from "@/components/admin/submit-button";
+import { updateMediaMetadataAction, reviewMediaAction, deleteUnusedMediaAction } from "@/app/admin/media/actions";
+
+type Category = { id: string; name: string };
+type Asset = { id: string; object_path: string; kind: string; byte_size: number; alt_text: string | null; category_id: string | null; is_approved: boolean; is_public: boolean; contains_pupils: boolean; uploaded_by_id: string; created_at: string };
+export function MediaAssetCard({ asset, categories, editable, canReview, ownUpload }: { asset: Asset; categories: Category[]; editable: boolean; canReview: boolean; ownUpload: boolean }) {
+ const [open, setOpen] = useState(false);
+ const [confirmDelete, setConfirmDelete] = useState(false);
+ const name = asset.object_path.split("/").at(-1) ?? "Media file";
+ const category = categories.find(c => c.id === asset.category_id)?.name ?? "Uncategorized";
+ const status = asset.is_public ? "Published" : asset.is_approved ? "Approved · Private" : "Pending approval";
+ return <article className="min-w-0 overflow-hidden border bg-white">
+  <div className="relative">
+   {asset.kind === "IMAGE" ? <img src={`/admin/media/preview/${asset.id}`} alt={asset.alt_text || "Private image"} loading="lazy" className="aspect-[4/3] w-full object-cover"/> : <div className="flex aspect-[4/3] items-center justify-center bg-background-warm"><FileText className="size-12 text-brand-800" aria-label="Document"/></div>}
+   <button type="button" aria-label={`Manage ${name}`} aria-haspopup="dialog" onClick={() => setOpen(true)} className="absolute right-3 top-3 flex size-10 items-center justify-center border border-border bg-white text-brand-900 shadow-sm hover:bg-background-warm focus-visible:outline-2 focus-visible:outline-brand-800"><MoreHorizontal aria-hidden="true" /></button>
+  </div>
+  <div className="space-y-2 p-4"><p className="truncate text-sm font-bold text-brand-900" title={asset.alt_text || name}>{asset.alt_text || name}</p><p className="text-xs text-muted-foreground">{category}</p><span className="inline-block border px-2 py-1 text-xs font-semibold">{status}</span></div>
+  {open && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 sm:p-6" onMouseDown={e => { if (e.target === e.currentTarget) setOpen(false); }}>
+   <div role="dialog" aria-modal="true" aria-labelledby={`media-dialog-${asset.id}`} onKeyDown={e => { if (e.key === "Escape") setOpen(false); }} className="max-h-[92dvh] w-full max-w-3xl overflow-y-auto border bg-white shadow-2xl">
+    <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-white p-4"><h2 id={`media-dialog-${asset.id}`} className="min-w-0 truncate font-heading text-xl font-bold text-brand-900">Media details</h2><button type="button" aria-label="Close media details" onClick={() => setOpen(false)} className="border p-2"><X className="size-5"/></button></header>
+    <div className="grid gap-6 p-5 md:grid-cols-2">
+     <div>{asset.kind === "IMAGE" ? <img src={`/admin/media/preview/${asset.id}`} alt={asset.alt_text || "Private image preview"} className="w-full border object-contain"/> : <div className="flex h-48 items-center justify-center border bg-background-warm"><FileText className="size-12"/></div>}<p className="mt-3 break-all text-xs text-muted-foreground">{name}</p><p className="mt-1 text-xs text-muted-foreground">{(asset.byte_size/1048576).toFixed(2)} MB · {new Date(asset.created_at).toLocaleDateString("en-UG")}</p><p className="mt-2 text-xs">{status} · {asset.contains_pupils ? "Pupil consent required" : "No identifiable pupils declared"}</p></div>
+     <div className="space-y-5">
+      <section><h3 className="mb-3 font-bold text-brand-900">Metadata</h3><form action={updateMediaMetadataAction} className="space-y-3"><input type="hidden" name="id" value={asset.id}/><label className="block text-sm font-semibold" htmlFor={`alt-${asset.id}`}>Alternative text</label><textarea id={`alt-${asset.id}`} name="alt_text" defaultValue={asset.alt_text ?? ""} maxLength={500} rows={3} disabled={!editable} className="w-full border p-2 text-sm disabled:bg-background-warm"/><FormSelect name="category_id" label="Category" defaultValue={asset.category_id ?? ""} disabled={!editable} options={[{value:"",label:"Uncategorized"},...categories.map(c=>({value:c.id,label:c.name}))]}/>{editable && <SubmitButton className="bg-brand-800 px-4 py-2 text-sm font-bold text-white">Save metadata</SubmitButton>}</form></section>
+      {canReview && <section className="border-t pt-4"><h3 className="mb-2 font-bold text-brand-900">Review and publication</h3><p className="mb-3 text-xs text-muted-foreground">Verify image rights, accessibility and any required pupil consent before approval.</p><form action={reviewMediaAction} className="flex flex-wrap gap-2"><input type="hidden" name="id" value={asset.id}/>{!asset.is_approved && <button name="action" value="APPROVE" disabled={ownUpload} className="border px-3 py-2 text-sm disabled:opacity-40">Approve</button>}{asset.is_approved && !asset.is_public && <button name="action" value="PUBLISH" disabled={ownUpload} className="bg-brand-800 px-3 py-2 text-sm text-white disabled:opacity-40">Publish</button>}{asset.is_public && <button name="action" value="WITHDRAW" className="border px-3 py-2 text-sm">Withdraw</button>}</form></section>}
+      {editable && !asset.is_public && <section className="border-t pt-4"><h3 className="font-bold text-destructive">Delete unused media</h3><p className="my-2 text-xs text-muted-foreground">Only unused, unapproved private files may be deleted.</p>{!confirmDelete ? <button type="button" onClick={() => setConfirmDelete(true)} className="border border-destructive px-3 py-2 text-sm text-destructive">Delete image</button> : <form action={deleteUnusedMediaAction} className="flex flex-wrap items-center gap-2"><input type="hidden" name="id" value={asset.id}/><button type="submit" className="bg-destructive px-3 py-2 text-sm text-white">Confirm deletion</button><button type="button" onClick={() => setConfirmDelete(false)} className="border px-3 py-2 text-sm">Cancel</button></form>}</section>}
+     </div>
+    </div>
+   </div>
+  </div>}
+ </article>;
+}
