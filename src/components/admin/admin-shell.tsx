@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Trash2, CalendarDays, FileText, Images, LayoutDashboard, Mail, Newspaper, Settings, Users, ClipboardCheck } from "lucide-react";
@@ -47,7 +48,7 @@ export function AdminShell({ children, title, eyebrow = "Administration", breadc
   return <div className="min-h-dvh bg-background-warm lg:grid lg:grid-cols-[17rem_1fr]">
     <aside className="hidden min-h-dvh bg-brand-900 text-white lg:fixed lg:inset-y-0 lg:block lg:w-68">
       <div className="flex items-center gap-3 border-b border-white/15 px-6 py-6">
-        <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center border border-white/30 font-heading text-lg font-bold text-white">SA</span>
+        <Image src="/brand/st-angella-crest.png" alt="St. Angella school crest" width={56} height={56} className="size-14 shrink-0 object-contain" />
         <div><p className="font-heading text-sm font-bold">St. Angella</p><p className="text-xs text-white/60">Staff workspace</p></div>
       </div>
       <div className="px-3 py-6"><Navigation roles={staff.roles} /></div>
