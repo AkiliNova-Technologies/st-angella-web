@@ -21,7 +21,10 @@ export async function saveManagedSectionAction(pageId:string, sectionId:string, 
  try { body=validateManagedPageBody(page.slug,page.body); }
  catch { redirect("/admin/pages/"+id+"?section_error=legacy"); }
  if(!body.sections.some(s=>s.id===sectionId)) redirect("/admin/pages/"+id+"?section_error=section");
- const sections=body.sections.map(s=>s.id===sectionId?{...s,...values.data,visible:formData.get("visible")==="on"}:s);
+ const imageValue=formData.get("imageId");
+ let imageId:string|null=null;
+ if(typeof imageValue==="string" && imageValue.length){const result=z.string().uuid().safeParse(imageValue);if(!result.success) redirect("/admin/pages/"+id+"?section_error=image"); const {data:asset}=await db.from("media_assets").select("id").eq("id",result.data).eq("kind","IMAGE").eq("is_approved",true).eq("is_public",true).eq("contains_pupils",false).maybeSingle();if(!asset) redirect("/admin/pages/"+id+"?section_error=image");imageId=asset.id;}
+ const sections=body.sections.map(s=>s.id===sectionId?{...s,...values.data,imageId,visible:formData.get("visible")==="on"}:s);
  const {error}=await db.from("page_contents").update({body:{version:1,sections}}).eq("id",id).eq("status","DRAFT");
  if(error) redirect("/admin/pages/"+id+"?section_error=save");
  revalidatePath("/admin/pages/"+id);
