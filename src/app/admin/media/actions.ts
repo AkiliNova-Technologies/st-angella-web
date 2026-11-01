@@ -90,7 +90,18 @@ export async function reviewMediaAction(formData: FormData) {
  if (!parsed.success) redirect("/admin/media?error=validation");
  const supabase=await createSupabaseServerClient();
  const {error}=await supabase.rpc("review_media_publication",{p_asset_id:parsed.data.id,p_action:parsed.data.action});
- if(error) { console.error("Media review failed",{code:error.code}); redirect("/admin/media?error=review"); }
+ if(error) {
+   console.error("Media review failed", { code: error.code, message: error.message });
+   const message = error.message.toLowerCase();
+   const reason = message.includes("independent reviewer") ? "independent"
+     : message.includes("alternative text") ? "alt_text"
+     : message.includes("pupil consent") ? "consent"
+     : message.includes("approve before publishing") ? "approval_required"
+     : message.includes("not authorized") ? "permission"
+     : message.includes("asset not found") ? "not_found"
+     : "review";
+   redirect("/admin/media?error=" + reason);
+  }
  revalidatePath("/admin/media"); revalidatePath("/gallery"); revalidatePath("/news"); revalidatePath("/");
  redirect("/admin/media?reviewed=1");
 }
