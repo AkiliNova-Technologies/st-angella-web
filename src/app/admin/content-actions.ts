@@ -7,6 +7,7 @@ import { requireStaff } from "@/lib/auth/require-staff";
 import { hasPermission } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isManagedPageSlug } from "@/lib/content/managed-pages";
 
 const idSchema = z.string().uuid();
 const slugSchema = z.string().trim().min(2).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -49,8 +50,9 @@ export async function updatePageAction(id: string, formData: FormData) {
   if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
   const values = z.object({ title: z.string().trim().min(2).max(200), slug: slugSchema }).parse({ title: formData.get("title"), slug: formData.get("slug") });
   const supabase = await createSupabaseServerClient();
-  const { data: current } = await supabase.from("page_contents").select("id, created_by_id, status").eq("id", idSchema.parse(id)).single();
+  const { data: current } = await supabase.from("page_contents").select("id, created_by_id, status, slug, body").eq("id", idSchema.parse(id)).single();
   if (!current || !["DRAFT", "IN_REVIEW"].includes(current.status) || (current.created_by_id !== staff.profileId && !staff.roles.includes("SUPER_ADMIN"))) redirect("/admin/forbidden");
+  if (isManagedPageSlug(current.slug) && current.body && typeof current.body === "object" && "version" in current.body) redirectWith(`/admin/pages/${current.id}`, "error");
   const { error } = await supabase.from("page_contents").update({ ...values, body: parseBody(formData.get("body")) }).eq("id", current.id);
   if (error) redirectWith(`/admin/pages/${current.id}`, "error");
   revalidatePath("/admin/pages"); revalidatePath(`/admin/pages/${current.id}`);
