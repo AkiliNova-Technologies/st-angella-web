@@ -94,3 +94,25 @@ export async function reviewMediaAction(formData: FormData) {
  revalidatePath("/admin/media"); revalidatePath("/gallery"); revalidatePath("/news"); revalidatePath("/");
  redirect("/admin/media?reviewed=1");
 }
+
+export async function deleteUnusedMediaAction(formData: FormData) {
+ const staff = await requireStaff();
+ if (!staff.roles.some(role => role === "EDITOR" || role === "SUPER_ADMIN")) redirect("/admin/forbidden");
+ const id = z.string().uuid().safeParse(formData.get("id"));
+ if (!id.success) redirect("/admin/media?error=validation");
+ const supabase = await createSupabaseServerClient();
+ const { data, error } = await supabase.rpc("delete_unused_private_media", { p_asset_id: id.data });
+ if (error || !Array.isArray(data) || data.length !== 1) {
+   console.error("Private media deletion rejected", { code: error?.code });
+   redirect("/admin/media?error=inuse");
+ }
+ const asset = data[0] as { bucket: string; object_path: string };
+ const removed = await supabase.storage.from(asset.bucket).remove([asset.object_path]);
+ if (removed.error) {
+   console.error("Media database deleted but storage cleanup failed", { assetId: id.data, code: removed.error.name });
+   redirect("/admin/media?error=storage_cleanup");
+ }
+ revalidatePath("/admin/media");
+ revalidatePath("/admin/gallery");
+ redirect("/admin/media?deleted=1");
+}
