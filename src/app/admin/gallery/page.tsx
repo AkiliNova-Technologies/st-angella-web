@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { createGalleryCategoryAction, renameGalleryCategoryAction, deleteGalleryCategoryAction } from "./actions";
+import { GalleryCategoryManager } from "@/components/admin/gallery-category-manager";
+import { GalleryFilters } from "@/components/admin/gallery-filters";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -56,25 +57,14 @@ export default async function AdminGalleryPage({searchParams}:{searchParams:Prom
       {[["Gallery images", total],["Published", published],["Awaiting approval", pending]].map(([label,value]) => <div key={label} className="bg-white p-5"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 font-heading text-3xl font-bold text-brand-900">{value}</p></div>)}
     </section>
     <p className="mb-6 border-l-4 border-accent-gold bg-white p-4 text-sm">Only approved, public images with valid required consent can appear on the public website. Withdrawing consent must prevent further delivery of affected pupil images.</p>
-    <section className="mb-8 border bg-white p-5" aria-labelledby="gallery-categories-heading">
-      <div className="mb-4"><h2 id="gallery-categories-heading" className="font-heading text-xl font-bold text-brand-900">Gallery categories</h2><p className="mt-1 text-sm text-muted-foreground">Organize school photographs by activity or location. Only super administrators can change categories.</p></div>
-      {params.categories === "updated" && <p role="status" className="mb-4 border p-3 text-sm">Category changes saved.</p>}
-      {params.categories === "inuse" && <p role="alert" className="mb-4 border border-destructive p-3 text-sm">This category is in use. Reassign its images before deleting it.</p>}
-      {params.categories === "invalid" && <p role="alert" className="mb-4 border border-destructive p-3 text-sm">Enter a valid category name (2–70 characters).</p>}
-      {params.categories === "failed" && <p role="alert" className="mb-4 border border-destructive p-3 text-sm">Category operation failed. The name may already exist or your permissions may be insufficient.</p>}
-      {staff.roles.includes("SUPER_ADMIN") && <form action={createGalleryCategoryAction} className="mb-5 flex flex-wrap gap-2"><label htmlFor="new-gallery-category" className="sr-only">New category name</label><input id="new-gallery-category" name="name" required minLength={2} maxLength={70} placeholder="New category name" className="min-h-11 flex-1 border px-3 text-sm"/><button className="bg-brand-800 px-4 py-2 text-sm font-bold text-white">Add category</button></form>}
-      <div className="divide-y border">{(categories ?? []).map(category => <div key={category.id} className="flex flex-wrap items-center justify-between gap-3 p-3">
-        {staff.roles.includes("SUPER_ADMIN") ? <><form action={renameGalleryCategoryAction} className="flex min-w-0 flex-1 flex-wrap gap-2"><input type="hidden" name="id" value={category.id}/><label htmlFor={`category-${category.id}`} className="sr-only">Rename {category.name}</label><input id={`category-${category.id}`} name="name" required minLength={2} maxLength={70} defaultValue={category.name} className="min-h-10 min-w-0 flex-1 border px-3 text-sm"/><button className="border border-brand-800 px-3 py-2 text-xs font-bold text-brand-800">Save</button></form><form action={deleteGalleryCategoryAction}><input type="hidden" name="id" value={category.id}/><button className="border border-destructive px-3 py-2 text-xs font-bold text-destructive">Delete</button></form></> : <span className="text-sm font-semibold">{category.name}</span>}
-      </div>)}{!categories?.length && <p className="p-4 text-sm text-muted-foreground">No categories have been configured.</p>}</div>
-    </section>
+    {params.categories === "updated" && <p role="status" className="mb-4 border bg-white p-3 text-sm">Category changes saved.</p>}
+    {params.categories === "inuse" && <p role="alert" className="mb-4 border border-destructive bg-white p-3 text-sm">This category is in use. Reassign its images before deleting it.</p>}
+    {params.categories === "invalid" && <p role="alert" className="mb-4 border border-destructive bg-white p-3 text-sm">Enter a valid category name (2–70 characters).</p>}
+    {params.categories === "failed" && <p role="alert" className="mb-4 border border-destructive bg-white p-3 text-sm">Category operation failed. The name may already exist or your permissions may be insufficient.</p>}
+    <GalleryCategoryManager categories={categories ?? []} canManage={staff.roles.includes("SUPER_ADMIN")} />
     <section aria-labelledby="gallery-images-heading" className="mb-5">
       <h2 id="gallery-images-heading" className="mb-3 font-heading text-xl font-bold text-brand-900">Gallery images</h2>
-      <form method="get" action="/admin/gallery" className="grid gap-3 border bg-white p-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div><label htmlFor="gallery-search" className="mb-1 block text-sm font-semibold">Search descriptions</label><input id="gallery-search" name="q" defaultValue={search} maxLength={80} placeholder="Search images" className="min-h-11 w-full border px-3 text-sm"/></div>
-        <div><label htmlFor="gallery-category-filter" className="mb-1 block text-sm font-semibold">Category</label><select id="gallery-category-filter" name="category" defaultValue={category} className="min-h-11 w-full border bg-white px-3 text-sm"><option value="">All categories</option><option value="uncategorized">Uncategorized</option>{(categories ?? []).map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-        <div><label htmlFor="gallery-status-filter" className="mb-1 block text-sm font-semibold">Publication status</label><select id="gallery-status-filter" name="status" defaultValue={status} className="min-h-11 w-full border bg-white px-3 text-sm"><option value="">All statuses</option><option value="pending">Pending approval</option><option value="approved">Approved, private</option><option value="published">Published</option></select></div>
-        <div className="flex items-end gap-2"><button className="min-h-11 flex-1 bg-brand-800 px-4 text-sm font-bold text-white">Apply filters</button><Link href="/admin/gallery" className="flex min-h-11 items-center border px-3 text-sm font-semibold">Clear</Link></div>
-      </form>
+      <GalleryFilters categories={categories ?? []} search={search} category={category} status={status} />
       <p role="status" className="mt-3 text-sm text-muted-foreground">{count ?? 0} matching images · Page {page} of {pages}</p>
       {categoriesError && <p role="alert" className="mt-2 text-sm text-destructive">Categories could not be loaded.</p>}
     </section>
