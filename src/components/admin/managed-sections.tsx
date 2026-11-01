@@ -1,3 +1,4 @@
+import { sectionFields } from "@/lib/content/section-fields";
 import { SectionItemsEditor } from "@/components/admin/section-items-editor";
 import { FormSelect } from "@/components/admin/form-select";
 import { managedPages, isManagedPageSlug, validateManagedPageBody } from "@/lib/content/managed-pages";
