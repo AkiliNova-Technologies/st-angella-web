@@ -1,3 +1,4 @@
+import { ManagedSections } from "@/components/admin/managed-sections";
 export const instant = false;
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -16,5 +17,5 @@ export default async function PageEditor({ params, searchParams }: { params: Pro
     supabase.from("content_revisions").select("id, revision_number, created_at, author_id, staff_profiles!content_revisions_author_id_fkey(display_name), content_reviews(id, decision, notes, created_at, staff_profiles!content_reviews_reviewer_id_fkey(display_name))").eq("entity_type", "PAGE").eq("entity_id", id).order("revision_number", { ascending: false }),
   ]);
   if (!record) notFound(); const save = updatePageAction.bind(null, id);
-  return <AdminShell title={record.title} staff={staff} breadcrumbs={[{ label: "Pages", href: "/admin/pages" }, { label: record.title }]}><ContentEditor record={{ ...record, status: record.status as ContentStatus }} entity="PAGE" roles={staff.roles} profileId={staff.profileId} saveAction={save} revisions={(revisions ?? []) as never} feedback={feedback} /></AdminShell>;
+  return <AdminShell title={record.title} staff={staff} breadcrumbs={[{ label: "Pages", href: "/admin/pages" }, { label: record.title }]}><div className="mb-6"><ManagedSections slug={record.slug} body={record.body} /></div><ContentEditor record={{ ...record, status: record.status as ContentStatus }} entity="PAGE" roles={staff.roles} profileId={staff.profileId} saveAction={save} revisions={(revisions ?? []) as never} feedback={feedback} /></AdminShell>;
 }
