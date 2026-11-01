@@ -171,6 +171,25 @@ export async function transitionContentAction(entityInput: string, idInput: stri
     const { error: revisionError } = await supabase.from("content_revisions").insert({ entity_type: entity, entity_id: id, revision_number: (latest?.revision_number ?? 0) + 1, snapshot: record, author_id: staff.profileId });
     if (revisionError) { console.error("Content revision creation failed", { entity, id, code: revisionError.code, message: revisionError.message }); redirectWith(`${basePath}/${id}`, "error"); }
   }
+  if (target === "PUBLISHED" && entity !== "PAGE") {
+    const { data: content, error: contentError } = await supabase.from(table)
+      .select("featured_media_id").eq("id", id).single();
+    if (contentError || !content) redirectWith(`${basePath}/${id}`, "error");
+    if (content.featured_media_id) {
+      // The anonymous query enforces the same public-media eligibility policy
+      // used by /media/public/[id], including pupil-consent requirements.
+      const { createClient } = await import("@supabase/supabase-js");
+      const { publicEnv } = await import("@/lib/env");
+      const env = publicEnv();
+      const publicClient = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+        { auth: { persistSession: false, autoRefreshToken: false } });
+      const { data: eligible, error: mediaError } = await publicClient.from("media_assets")
+        .select("id").eq("id", content.featured_media_id).eq("kind", "IMAGE").maybeSingle();
+      if (mediaError || !eligible) {
+        redirect(`${basePath}/${id}?media_not_public=1`);
+      }
+    }
+  }
   const { error } = await supabase.rpc("transition_content", { entity_type: entity, entity_id: id, target_status: target });
   if (error) { console.error("Content transition failed", { entity, id, target, code: error.code, message: error.message }); redirectWith(`${basePath}/${id}`, "error"); }
   revalidatePath("/admin"); revalidatePath(basePath); revalidatePath(`${basePath}/${id}`);
