@@ -9,7 +9,7 @@ import { reviewContentAction, transitionContentAction } from "@/app/admin/conten
 
 type Revision = { id: string; revision_number: number; created_at: string; author_id: string; staff_profiles: { display_name: string } | null; content_reviews: { id: string; decision: string; notes: string | null; created_at: string; staff_profiles: { display_name: string } | null }[] };
 
-export function ContentEditor({ record, entity, roles, profileId, saveAction, revisions = [], children, feedback }: {
+export function ContentEditor({ record, entity, roles, profileId, saveAction, revisions = [], children, feedback, structured = false }: {
   record: { id: string; title: string; slug: string; body: unknown; status: ContentStatus; created_by_id: string; updated_at: string };
   entity: "PAGE" | "NEWS_ARTICLE" | "SCHOOL_EVENT";
   roles: StaffRole[];
@@ -17,6 +17,7 @@ export function ContentEditor({ record, entity, roles, profileId, saveAction, re
   saveAction: (formData: FormData) => void | Promise<void>;
   revisions?: Revision[];
   children?: React.ReactNode;
+  structured?: boolean;
   feedback?: "saved" | "created" | "transitioned" | "reviewed" | "error";
 }) {
   const backHref = entity === "PAGE" ? "/admin/pages" : entity === "NEWS_ARTICLE" ? "/admin/news" : "/admin/events";
@@ -36,13 +37,13 @@ export function ContentEditor({ record, entity, roles, profileId, saveAction, re
     <section className="border bg-white">
       {feedback && <p role={feedback === "error" ? "alert" : "status"} className={`m-5 border-l-4 p-4 text-sm ${feedback === "error" ? "border-destructive bg-red-50" : "border-brand-800 bg-background-soft"}`}>{feedback === "error" ? "Action failed. Please review the record and try again." : feedback === "saved" ? "Changes saved." : feedback === "created" ? "Draft created." : feedback === "reviewed" ? "Review recorded." : "Workflow status updated."}</p>}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b px-6 py-5"><div><h2 className="font-heading text-xl font-bold text-brand-900">Content</h2><p className="mt-1 text-xs text-muted-foreground">Last updated {new Intl.DateTimeFormat("en-UG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(record.updated_at))}</p></div><StatusBadge status={record.status} /></div>
-      <form action={saveAction} className="space-y-5 p-6">
+      {structured ? <div className="p-6"><p className="text-sm text-muted-foreground">Content is edited in the page sections above. The page route and title are fixed to preserve navigation.</p><Link href={backHref} className="mt-4 inline-flex border border-brand-800 px-4 py-3 text-sm font-bold text-brand-800">Back to pages</Link></div> : <form action={saveAction} className="space-y-5 p-6">
         <div><label htmlFor="title" className="text-sm font-bold">Title</label><input id="title" name="title" defaultValue={record.title} required maxLength={200} disabled={!canEdit} className="mt-2 min-h-12 w-full border bg-white px-3 disabled:bg-background-warm" /></div>
         <div><label htmlFor="slug" className="text-sm font-bold">Slug</label><input id="slug" name="slug" defaultValue={record.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" disabled={!canEdit} className="mt-2 min-h-12 w-full border bg-white px-3 disabled:bg-background-warm" /></div>
         {children}
         <RichTextEditor initialValue={initialHtml} disabled={!canEdit} />
         <div className="flex flex-wrap items-center justify-between gap-4 border-t pt-5"><Link href={backHref} className="inline-flex min-h-11 items-center border border-brand-800 px-5 py-3 text-sm font-bold text-brand-800 hover:bg-background-warm">Back to {entity === "PAGE" ? "pages" : entity === "NEWS_ARTICLE" ? "news" : "events"}</Link>{canEdit ? <SubmitButton>Save changes</SubmitButton> : <span className="text-sm text-muted-foreground">Read-only in this state or for your role.</span>}</div>
-      </form>
+      </form>}
     </section>
     <aside className="space-y-6">
       <section className="border bg-white p-6"><h2 className="font-heading text-lg font-bold text-brand-900">Publication workflow</h2><p className="mt-2 text-sm text-muted-foreground">Draft → In review → Approved → Published. Approval and publication require an independent reviewer; the author cannot approve their own work.</p><div className="mt-5 grid gap-3">
