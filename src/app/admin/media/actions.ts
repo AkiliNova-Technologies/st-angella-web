@@ -82,3 +82,15 @@ export async function uploadEditorImageAction(formData: FormData): Promise<{id?:
   revalidatePath("/admin/media");
   return data;
 }
+
+export async function reviewMediaAction(formData: FormData) {
+ const staff=await requireStaff(["REVIEWER","SUPER_ADMIN"]);
+ if (!hasPermission(staff.roles,"media:manage")) redirect("/admin/forbidden");
+ const parsed=z.object({id:z.string().uuid(),action:z.enum(["APPROVE","PUBLISH","WITHDRAW"])}).safeParse(Object.fromEntries(formData));
+ if (!parsed.success) redirect("/admin/media?error=validation");
+ const supabase=await createSupabaseServerClient();
+ const {error}=await supabase.rpc("review_media_publication",{p_asset_id:parsed.data.id,p_action:parsed.data.action});
+ if(error) { console.error("Media review failed",{code:error.code}); redirect("/admin/media?error=review"); }
+ revalidatePath("/admin/media"); revalidatePath("/gallery"); revalidatePath("/news"); revalidatePath("/");
+ redirect("/admin/media?reviewed=1");
+}
