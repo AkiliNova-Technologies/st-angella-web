@@ -116,3 +116,33 @@ export async function deleteUnusedMediaAction(formData: FormData) {
  revalidatePath("/admin/gallery");
  redirect("/admin/media?deleted=1");
 }
+
+const consentSchema = z.object({
+ id:z.string().uuid(),
+ status:z.enum(["GRANTED","REVOKED"]),
+ reference_code:z.string().trim().max(120),
+ valid_from:z.union([z.literal(""),z.iso.date()]),
+ valid_until:z.union([z.literal(""),z.iso.date()]),
+ notes:z.string().trim().max(1000),
+}).superRefine((value,ctx)=>{
+ if(value.status==="GRANTED" && !value.reference_code) ctx.addIssue({code:"custom",path:["reference_code"],message:"Consent evidence reference is required"});
+ if(value.valid_from && value.valid_until && value.valid_from>value.valid_until) ctx.addIssue({code:"custom",path:["valid_until"],message:"Expiry precedes start"});
+});
+export async function recordMediaConsentAction(formData:FormData) {
+ const staff=await requireStaff(["REVIEWER","SUPER_ADMIN"]);
+ if(!hasPermission(staff.roles,"media:manage")) redirect("/admin/forbidden");
+ const parsed=consentSchema.safeParse(Object.fromEntries(formData));
+ if(!parsed.success) redirect("/admin/media?error=consent_validation");
+ const input=parsed.data;
+ const supabase=await createSupabaseServerClient();
+ const {data:asset,error:assetError}=await supabase.from("media_assets").select("id,kind,contains_pupils").eq("id",input.id).single();
+ if(assetError || !asset || asset.kind!=="IMAGE" || !asset.contains_pupils) redirect("/admin/media?error=consent_asset");
+ const {error}=await supabase.from("media_consent_records").insert({
+  media_asset_id:input.id,status:input.status,reference_code:input.reference_code||null,
+  valid_from:input.valid_from||null,valid_until:input.valid_until||null,
+  notes:input.notes||null,recorded_by_id:staff.profileId
+ });
+ if(error){console.error("Consent recording rejected",{code:error.code});redirect("/admin/media?error=consent_save");}
+ revalidatePath("/admin/media");revalidatePath("/admin/gallery");revalidatePath("/gallery");revalidatePath("/news");revalidatePath("/");
+ redirect("/admin/media?consent_saved=1");
+}
