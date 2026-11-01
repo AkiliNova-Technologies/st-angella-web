@@ -25,7 +25,7 @@ export default async function AdminGalleryPage({searchParams}:{searchParams:Prom
     if (search) query = query.ilike("alt_text", `%${search}%`);
     if (category === "uncategorized") query = query.is("category_id",null);
     else if (categories?.some(c => c.id === category)) query = query.eq("category_id",category);
-    if (status === "published") query = query.eq("is_public",true);
+    if (status === "published") query = query.eq("is_public",true).eq("is_approved",true);
     if (status === "approved") query = query.eq("is_approved",true).eq("is_public",false);
     if (status === "pending") query = query.eq("is_approved",false);
     return query;
@@ -33,7 +33,7 @@ export default async function AdminGalleryPage({searchParams}:{searchParams:Prom
   const [{data:images,count,error},{count:totalCount},{count:publishedCount},{count:pendingCount}] = await Promise.all([
     buildQuery().order("created_at",{ascending:false}).order("id",{ascending:false}).range((page-1)*pageSize,page*pageSize-1),
     supabase.from("media_assets").select("id",{count:"exact",head:true}).eq("kind","IMAGE"),
-    supabase.from("media_assets").select("id",{count:"exact",head:true}).eq("kind","IMAGE").eq("is_public",true),
+    supabase.from("media_assets").select("id",{count:"exact",head:true}).eq("kind","IMAGE").eq("is_public",true).eq("is_approved",true),
     supabase.from("media_assets").select("id",{count:"exact",head:true}).eq("kind","IMAGE").eq("is_approved",false),
   ]);
   const total = totalCount ?? 0;
