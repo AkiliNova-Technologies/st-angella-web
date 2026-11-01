@@ -19,7 +19,7 @@ export default async function MediaAdmin({ searchParams }: { searchParams: Promi
   ]);
   const canEdit = staff.roles.includes("EDITOR") || staff.roles.includes("SUPER_ADMIN");
   const canReview = staff.roles.includes("REVIEWER") || staff.roles.includes("SUPER_ADMIN");
-  const uploadErrors: Record<string, string> = { validation: "Choose a supported file under 8 MB and complete the required fields.", bucket: "Private media storage is not available. Check the configured Storage bucket.", upload: "Upload was rejected by Storage. Please check the server logs and your staff upload permissions.", record: "The file uploaded, but its database registration failed. The upload was rolled back." };
+  const uploadErrors: Record<string, string> = { validation: "Choose a supported file under 8 MB and complete the required fields.", bucket: "Private media storage is not available. Check the configured Storage bucket.", upload: "Upload was rejected by Storage. Please check the server logs and your staff upload permissions.", record: "The file uploaded, but its database registration failed. The upload was rolled back.", review: "Review failed. Check reviewer permissions, independent review, alternative text and pupil consent." };
   return <AdminShell title="Media Library" staff={staff} breadcrumbs={[{ label: "Media Library" }]}>
     <p className="mb-6 border-l-4 border-accent-gold bg-white p-4 text-sm">Upload images and PDF documents to private storage. Public approval requires an independent authorized review and verified consent. Never upload pupil images without appropriate authorization.</p>
     {params.uploaded && <p role="status" className="mb-4 border bg-white p-3 text-sm">Media uploaded privately and registered successfully.</p>}
