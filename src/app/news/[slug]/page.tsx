@@ -10,7 +10,7 @@ function publicClient() {
  return createClient(env.NEXT_PUBLIC_SUPABASE_URL,env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
 }
 async function getArticle(slug:string) {
- const {data,error}=await publicClient().from("news_articles").select("slug,title,summary,body,published_at").eq("slug",slug).eq("status","PUBLISHED").is("deleted_at",null).maybeSingle();
+ const {data,error}=await publicClient().from("news_articles").select("slug,title,summary,body,published_at,featured_media_id").eq("slug",slug).eq("status","PUBLISHED").is("deleted_at",null).maybeSingle();
  if(error) { console.error("Public article query failed",error.code); return null; }
  return data;
 }
@@ -40,6 +40,7 @@ function paragraphs(body:unknown):string[] {
 }
 export default async function NewsArticlePage({params}:ArticlePageProps) {
  const {slug}=await params; const article=await getArticle(slug); if(!article) notFound();
+ const eligibleImage = article.featured_media_id ? await publicClient().from("media_assets").select("id,alt_text").eq("id",article.featured_media_id).maybeSingle() : null;
  const published=article.published_at?new Date(article.published_at).toLocaleDateString("en-UG",{day:"numeric",month:"long",year:"numeric"}):null;
- return <article className="py-16 lg:py-24"><Container><header className="max-w-4xl"><p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-800">School news {published&&<>· <time dateTime={article.published_at}>{published}</time></>}</p><h1 className="mt-5 font-heading text-4xl font-extrabold text-brand-900 sm:text-5xl">{article.title}</h1>{article.summary&&<p className="mt-5 text-lg text-muted-foreground">{article.summary}</p>}</header><div className="mt-10 max-w-3xl space-y-5 text-foreground">{paragraphs(article.body).map((paragraph,index)=><p key={index}>{paragraph}</p>)}</div></Container></article>;
+ return <article className="py-16 lg:py-24"><Container><header className="max-w-4xl"><p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-800">School news {published&&<>· <time dateTime={article.published_at}>{published}</time></>}</p><h1 className="mt-5 font-heading text-4xl font-extrabold text-brand-900 sm:text-5xl">{article.title}</h1>{article.summary&&<p className="mt-5 text-lg text-muted-foreground">{article.summary}</p>}</header>{eligibleImage?.data && <figure className="mt-10 max-w-4xl"><img src={"/media/public/"+eligibleImage.data.id} alt={eligibleImage.data.alt_text ?? ""} className="aspect-video w-full object-cover" loading="eager" /></figure>}<div className="mt-10 max-w-3xl space-y-5 text-foreground">{paragraphs(article.body).map((paragraph,index)=><p key={index}>{paragraph}</p>)}</div></Container></article>;
 }
