@@ -9,7 +9,7 @@ import { requireStaff } from "@/lib/auth/require-staff";
 import type { ContentStatus } from "@/lib/content/lifecycle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default async function PageEditor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; created?: string; reviewed?: string; transitioned?: string; error?: string }> }) {
+export default async function PageEditor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; created?: string; reviewed?: string; transitioned?: string; error?: string; section_saved?: string; section_error?: string }> }) {
   const feedbackParams = await searchParams;
   const feedback = (["error", "saved", "created", "reviewed", "transitioned"] as const).find((key) => feedbackParams[key]) ;
   const staff = await requireStaff(); const { id } = await params; const supabase = await createSupabaseServerClient();
