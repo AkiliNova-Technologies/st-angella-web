@@ -4,7 +4,7 @@ import { ImageIcon } from "lucide-react";
 
 export type GalleryImage = { id: string; alt_text: string | null; category_id: string | null };
 export type GalleryCategory = { id: string; name: string };
-export function GalleryBrowser({ images, categories }: { images: GalleryImage[]; categories: GalleryCategory[] }) {
+export function GalleryBrowser({ images = [], categories = [] }: { images?: GalleryImage[]; categories?: GalleryCategory[] }) {
  const [active,setActive] = useState("all");
  const visible = active === "all" ? images : images.filter(image => image.category_id === active);
  return <div>
