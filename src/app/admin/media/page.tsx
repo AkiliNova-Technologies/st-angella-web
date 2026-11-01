@@ -10,7 +10,7 @@ import { requireStaff } from "@/lib/auth/require-staff";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { updateMediaMetadataAction, reviewMediaAction } from "./actions";
 
-export default async function MediaAdmin({ searchParams }: { searchParams: Promise<{ saved?: string; uploaded?: string; error?: string; page?: string; pageSize?: string }> }) {
+export default async function MediaAdmin({ searchParams }: { searchParams: Promise<{ saved?: string; uploaded?: string; reviewed?: string; error?: string; page?: string; pageSize?: string }> }) {
   const staff = await requireStaff(); const params = await searchParams; const { page, pageSize } = parseTablePagination(params);
   const supabase = await createSupabaseServerClient();
   const [{ data: assets, count, error }, { data: categories }] = await Promise.all([
