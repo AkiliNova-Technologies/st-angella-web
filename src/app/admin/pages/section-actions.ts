@@ -1,5 +1,5 @@
-import { parseSectionItems } from "@/lib/content/section-items";
 "use server";
+import { parseSectionItems } from "@/lib/content/section-items";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
