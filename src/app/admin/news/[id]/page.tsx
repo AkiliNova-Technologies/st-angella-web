@@ -8,9 +8,9 @@ import { requireStaff } from "@/lib/auth/require-staff";
 import type { ContentStatus } from "@/lib/content/lifecycle";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export default async function NewsEditor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; created?: string; reviewed?: string; transitioned?: string; error?: string }> }) {
+export default async function NewsEditor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; created?: string; reviewed?: string; transitioned?: string; error?: string; reopened?: string }> }) {
   const feedbackParams = await searchParams;
-  const feedback = (["error", "saved", "created", "reviewed", "transitioned"] as const).find((key) => feedbackParams[key]) ;
+  const feedback = (["error", "saved", "created", "reviewed", "transitioned", "reopened"] as const).find((key) => feedbackParams[key]) ;
   const staff = await requireStaff(); const { id } = await params; const supabase = await createSupabaseServerClient(); const {data: featuredAssets} = await supabase.from("media_assets").select("id,alt_text,object_path,is_approved").eq("kind","IMAGE").order("created_at",{ascending:false}).limit(100);
   const [{ data: record }, { data: revisions }] = await Promise.all([
     supabase.from("news_articles").select("id, title, slug, summary, body, status, created_by_id, featured_media_id, updated_at").eq("id", id).is("deleted_at", null).single(),
