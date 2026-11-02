@@ -20,6 +20,24 @@ export async function updateMediaMetadataAction(formData: FormData) {
   redirect("/admin/media?saved=1");
 }
 
+export async function updateMediaPresentationAction(formData: FormData) {
+ const staff = await requireStaff(["SUPER_ADMIN"]);
+ if (!staff.roles.includes("SUPER_ADMIN")) redirect("/admin/forbidden");
+ const parsed = z.object({id:z.string().uuid(),category_id:z.union([z.literal(""),z.string().uuid()]),show_in_gallery:z.string().optional()}).safeParse(Object.fromEntries(formData));
+ if (!parsed.success) redirect("/admin/media?error=validation");
+ const supabase = await createSupabaseServerClient();
+ const {error} = await supabase.rpc("set_media_presentation",{
+   p_asset_id:parsed.data.id,p_category_id:parsed.data.category_id || null,
+   p_show_in_gallery:parsed.data.show_in_gallery === "on"
+ });
+ if (error) {
+  console.error("Media presentation update failed",{code:error.code,message:error.message});
+  redirect("/admin/media?error=presentation");
+ }
+ revalidatePath("/admin/media");revalidatePath("/admin/gallery");revalidatePath("/gallery");
+ redirect("/admin/media?saved=1");
+}
+
 const uploadSchema = z.object({
   alt_text: z.string().trim().max(500),
   category_id: z.union([z.literal(""), z.string().uuid()]),
