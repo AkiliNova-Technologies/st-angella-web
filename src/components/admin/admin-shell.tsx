@@ -1,19 +1,24 @@
-import Image from "next/image";
+"use client";
 import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { CalendarDays, FileText, Images, LayoutDashboard, Mail, Newspaper, Settings, Users } from "lucide-react";
+import { Trash2, CalendarDays, FileText, Images, LayoutDashboard, Mail, Newspaper, Settings, Users, ClipboardCheck } from "lucide-react";
 import { logoutAction } from "@/app/admin/actions";
 import type { StaffRole } from "@/lib/auth/permissions";
 
-const navigation: { href: string; label: string; icon: typeof LayoutDashboard; enabled: boolean; superOnly?: boolean }[] = [
+const navigation: { href: string; label: string; icon: typeof LayoutDashboard; enabled: boolean; hidden?: boolean; superOnly?: boolean; reviewerOnly?: boolean }[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, enabled: true },
-  { href: "/admin/pages", label: "Pages", icon: FileText, enabled: true },
+  { href: "/admin/pages", label: "Pages", icon: FileText, enabled: true, hidden: true },
   { href: "/admin/news", label: "News", icon: Newspaper, enabled: true },
   { href: "/admin/events", label: "Events", icon: CalendarDays, enabled: true },
-  { href: "/admin/media", label: "Media Library", icon: Images, enabled: false },
+  { href: "/admin/reviews", label: "Reviews", icon: ClipboardCheck, enabled: true, reviewerOnly: true },
+  { href: "/admin/gallery", label: "Gallery", icon: Images, enabled: true },
+  { href: "/admin/media", label: "Media Library", icon: Images, enabled: true },
+  { href: "/admin/trash", label: "Trash", icon: Trash2, enabled: true, superOnly: true },
   { href: "/admin/staff", label: "Staff", icon: Users, enabled: true, superOnly: true },
-  { href: "/admin/enquiries", label: "Enquiries", icon: Mail, enabled: false },
-  { href: "/admin/settings", label: "Settings", icon: Settings, enabled: false },
+  { href: "/admin/enquiries", label: "Enquiries", icon: Mail, enabled: true, superOnly: true },
+  { href: "/admin/settings", label: "Settings", icon: Settings, enabled: true, superOnly: true },
 ];
 
 type Props = {
@@ -25,9 +30,10 @@ type Props = {
 };
 
 function Navigation({ roles }: { roles: StaffRole[] }) {
+  const pathname = usePathname();
   return <nav aria-label="Administration navigation" className="space-y-1">
-    {navigation.filter((item) => !item.superOnly || roles.includes("SUPER_ADMIN")).map(({ href, label, icon: Icon, enabled }) => enabled ? (
-      <Link key={href} href={href} className="flex min-h-11 items-center gap-3 border-l-2 border-transparent px-4 text-sm font-semibold text-white/80 hover:border-accent-gold hover:bg-white/10 hover:text-white">
+    {navigation.filter((item) => !item.hidden && (!item.superOnly || roles.includes("SUPER_ADMIN")) && (!item.reviewerOnly || roles.includes("REVIEWER") || roles.includes("SUPER_ADMIN"))).map(({ href, label, icon: Icon, enabled }) => enabled ? (
+      <Link key={href} href={href} aria-current={pathname === href || (href !== "/admin" && pathname.startsWith(href + "/")) ? "page" : undefined} className={`flex min-h-11 items-center gap-3 border-l-2 px-4 text-sm font-semibold transition-colors ${pathname === href || (href !== "/admin" && pathname.startsWith(href + "/")) ? "border-accent-gold bg-white/15 text-white" : "border-transparent text-white/80 hover:border-accent-gold hover:bg-white/10 hover:text-white"}`}>
         <Icon className="size-4" aria-hidden="true" />{label}
       </Link>
     ) : (
@@ -42,7 +48,7 @@ export function AdminShell({ children, title, eyebrow = "Administration", breadc
   return <div className="min-h-dvh bg-background-warm lg:grid lg:grid-cols-[17rem_1fr]">
     <aside className="hidden min-h-dvh bg-brand-900 text-white lg:fixed lg:inset-y-0 lg:block lg:w-68">
       <div className="flex items-center gap-3 border-b border-white/15 px-6 py-6">
-        <Image src="/brand/st-angella-crest.png" alt="St. Angella School crest" width={46} height={46} className="size-12 object-contain" />
+        <Image src="/brand/st-angella-crest.png" alt="St. Angella school crest" width={56} height={56} className="size-14 shrink-0 object-contain" />
         <div><p className="font-heading text-sm font-bold">St. Angella</p><p className="text-xs text-white/60">Staff workspace</p></div>
       </div>
       <div className="px-3 py-6"><Navigation roles={staff.roles} /></div>

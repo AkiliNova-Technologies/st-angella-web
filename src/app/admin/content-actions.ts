@@ -6,6 +6,8 @@ import { z } from "zod";
 import { requireStaff } from "@/lib/auth/require-staff";
 import { hasPermission } from "@/lib/auth/permissions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { isManagedPageSlug } from "@/lib/content/managed-pages";
 
 const idSchema = z.string().uuid();
 const slugSchema = z.string().trim().min(2).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -16,11 +18,31 @@ const pathByEntity = { PAGE: "/admin/pages", NEWS_ARTICLE: "/admin/news", SCHOOL
 
 function parseBody(value: FormDataEntryValue | null) {
   const text = z.string().trim().min(1).max(100_000).parse(value);
-  try { return JSON.parse(text) as unknown; } catch { return { text }; }
+  return { html: text };
+}
+
+async function selectedFeaturedMedia(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, value: FormDataEntryValue | null) {
+  const id = z.union([z.literal(""), z.string().uuid()]).parse(value ?? "");
+  if (!id) return null;
+  const { data, error } = await supabase.from("media_assets").select("id").eq("id", id).eq("kind", "IMAGE").single();
+  if (error || !data) throw new Error("Selected media is unavailable");
+  return data.id;
 }
 
 function redirectWith(path: string, kind: "saved" | "created" | "transitioned" | "reviewed" | "error"): never {
   redirect(`${path}?${kind}=1`);
+}
+
+export async function createPageAction(formData: FormData) {
+  const staff = await requireStaff();
+  if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
+  const parsed = z.object({ title: z.string().trim().min(2).max(200), slug: slugSchema }).safeParse({ title: formData.get("title"), slug: formData.get("slug") });
+  if (!parsed.success) redirectWith("/admin/pages/new", "error");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("page_contents").insert({ ...parsed.data, body: parseBody(formData.get("body")), created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
+  if (error || !data) redirectWith("/admin/pages/new", "error");
+  revalidatePath("/admin/pages");
+  redirectWith(`/admin/pages/${data.id}`, "created");
 }
 
 export async function updatePageAction(id: string, formData: FormData) {
@@ -28,8 +50,9 @@ export async function updatePageAction(id: string, formData: FormData) {
   if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
   const values = z.object({ title: z.string().trim().min(2).max(200), slug: slugSchema }).parse({ title: formData.get("title"), slug: formData.get("slug") });
   const supabase = await createSupabaseServerClient();
-  const { data: current } = await supabase.from("page_contents").select("id, created_by_id, status").eq("id", idSchema.parse(id)).single();
+  const { data: current } = await supabase.from("page_contents").select("id, created_by_id, status, slug, body").eq("id", idSchema.parse(id)).single();
   if (!current || !["DRAFT", "IN_REVIEW"].includes(current.status) || (current.created_by_id !== staff.profileId && !staff.roles.includes("SUPER_ADMIN"))) redirect("/admin/forbidden");
+  if (isManagedPageSlug(current.slug) && current.body && typeof current.body === "object" && "version" in current.body) redirectWith(`/admin/pages/${current.id}`, "error");
   const { error } = await supabase.from("page_contents").update({ ...values, body: parseBody(formData.get("body")) }).eq("id", current.id);
   if (error) redirectWith(`/admin/pages/${current.id}`, "error");
   revalidatePath("/admin/pages"); revalidatePath(`/admin/pages/${current.id}`);
@@ -41,7 +64,8 @@ export async function createNewsAction(formData: FormData) {
   if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
   const values = z.object({ title: z.string().trim().min(2).max(200), slug: slugSchema, summary: z.string().trim().min(10).max(500) }).parse({ title: formData.get("title"), slug: formData.get("slug"), summary: formData.get("summary") });
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("news_articles").insert({ ...values, body: parseBody(formData.get("body")), created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
+  const featured_media_id = await selectedFeaturedMedia(supabase, formData.get("featured_media_id"));
+  const { data, error } = await supabase.from("news_articles").insert({ ...values, featured_media_id, body: parseBody(formData.get("body")), created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
   if (error || !data) redirectWith("/admin/news/new", "error");
   revalidatePath("/admin/news");
   redirectWith(`/admin/news/${data.id}`, "created");
@@ -54,7 +78,8 @@ export async function updateNewsAction(id: string, formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: current } = await supabase.from("news_articles").select("id, created_by_id, status").eq("id", idSchema.parse(id)).single();
   if (!current || !["DRAFT", "IN_REVIEW"].includes(current.status) || (current.created_by_id !== staff.profileId && !staff.roles.includes("SUPER_ADMIN"))) redirect("/admin/forbidden");
-  const { error } = await supabase.from("news_articles").update({ ...values, body: parseBody(formData.get("body")) }).eq("id", current.id);
+  const featured_media_id = await selectedFeaturedMedia(supabase, formData.get("featured_media_id"));
+  const { error } = await supabase.from("news_articles").update({ ...values, featured_media_id, body: parseBody(formData.get("body")) }).eq("id", current.id);
   if (error) redirectWith(`/admin/news/${current.id}`, "error");
   revalidatePath("/admin/news"); revalidatePath(`/admin/news/${current.id}`);
   redirectWith(`/admin/news/${current.id}`, "saved");
@@ -86,7 +111,8 @@ export async function createEventAction(formData: FormData) {
   if (!hasPermission(staff.roles, "content:edit")) redirect("/admin/forbidden");
   const values = eventValues(formData);
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("school_events").insert({ ...values, created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
+  const featured_media_id = await selectedFeaturedMedia(supabase, formData.get("featured_media_id"));
+  const { data, error } = await supabase.from("school_events").insert({ ...values, featured_media_id, created_by_id: staff.profileId, status: "DRAFT" }).select("id").single();
   if (error || !data) redirectWith("/admin/events/new", "error");
   revalidatePath("/admin/events");
   redirectWith(`/admin/events/${data.id}`, "created");
@@ -98,10 +124,39 @@ export async function updateEventAction(id: string, formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const { data: current } = await supabase.from("school_events").select("id, created_by_id, status").eq("id", idSchema.parse(id)).single();
   if (!current || !["DRAFT", "IN_REVIEW"].includes(current.status) || (current.created_by_id !== staff.profileId && !staff.roles.includes("SUPER_ADMIN"))) redirect("/admin/forbidden");
-  const { error } = await supabase.from("school_events").update(values).eq("id", current.id);
+  const featured_media_id = await selectedFeaturedMedia(supabase, formData.get("featured_media_id"));
+  const { error } = await supabase.from("school_events").update({ ...values, featured_media_id }).eq("id", current.id);
   if (error) redirectWith(`/admin/events/${current.id}`, "error");
   revalidatePath("/admin/events"); revalidatePath(`/admin/events/${current.id}`);
   redirectWith(`/admin/events/${current.id}`, "saved");
+}
+
+
+/** Reopen approved news or events for editing. The approval is no longer usable
+ * until a fresh revision receives independent review. */
+export async function reopenApprovedContentAction(entityInput: string, idInput: string) {
+  const staff = await requireStaff(["SUPER_ADMIN"]);
+  const entity = z.enum(["NEWS_ARTICLE", "SCHOOL_EVENT"]).parse(entityInput);
+  const id = idSchema.parse(idInput);
+  const table = tableByEntity[entity];
+  const path = `${pathByEntity[entity]}/${id}`;
+  const admin = createSupabaseAdminClient();
+  const { data: current, error: loadError } = await admin.from(table)
+    .select("id,status,deleted_at").eq("id", id).single();
+  if (loadError || !current || current.deleted_at || current.status !== "APPROVED") redirectWith(path, "error");
+  const { data: updated, error } = await admin.from(table)
+    .update({ status: "DRAFT", published_at: null })
+    .eq("id", id).eq("status", "APPROVED").is("deleted_at", null)
+    .select("id").maybeSingle();
+  if (error || !updated) {
+    console.error("Reopen approved content failed", { entity, id, code: error?.code });
+    redirectWith(path, "error");
+  }
+  // The status change is also captured by the existing database audit trigger.
+  revalidatePath("/admin");
+  revalidatePath(pathByEntity[entity]);
+  revalidatePath(path);
+  redirect(`${path}?reopened=1`);
 }
 
 export async function transitionContentAction(entityInput: string, idInput: string, targetInput: string) {
@@ -114,10 +169,29 @@ export async function transitionContentAction(entityInput: string, idInput: stri
     if (!record || record.created_by_id !== staff.profileId || record.status !== "DRAFT") redirect("/admin/forbidden");
     const { data: latest } = await supabase.from("content_revisions").select("revision_number").eq("entity_type", entity).eq("entity_id", id).order("revision_number", { ascending: false }).limit(1).maybeSingle();
     const { error: revisionError } = await supabase.from("content_revisions").insert({ entity_type: entity, entity_id: id, revision_number: (latest?.revision_number ?? 0) + 1, snapshot: record, author_id: staff.profileId });
-    if (revisionError) redirectWith(`${basePath}/${id}`, "error");
+    if (revisionError) { console.error("Content revision creation failed", { entity, id, code: revisionError.code, message: revisionError.message }); redirectWith(`${basePath}/${id}`, "error"); }
+  }
+  if (target === "PUBLISHED" && entity !== "PAGE") {
+    const { data: content, error: contentError } = await supabase.from(table)
+      .select("featured_media_id").eq("id", id).single();
+    if (contentError || !content) redirectWith(`${basePath}/${id}`, "error");
+    if (content.featured_media_id) {
+      // The anonymous query enforces the same public-media eligibility policy
+      // used by /media/public/[id], including pupil-consent requirements.
+      const { createClient } = await import("@supabase/supabase-js");
+      const { publicEnv } = await import("@/lib/env");
+      const env = publicEnv();
+      const publicClient = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+        { auth: { persistSession: false, autoRefreshToken: false } });
+      const { data: eligible, error: mediaError } = await publicClient.from("media_assets")
+        .select("id").eq("id", content.featured_media_id).eq("kind", "IMAGE").maybeSingle();
+      if (mediaError || !eligible) {
+        redirect(`${basePath}/${id}?media_not_public=1`);
+      }
+    }
   }
   const { error } = await supabase.rpc("transition_content", { entity_type: entity, entity_id: id, target_status: target });
-  if (error) redirectWith(`${basePath}/${id}`, "error");
+  if (error) { console.error("Content transition failed", { entity, id, target, code: error.code, message: error.message }); redirectWith(`${basePath}/${id}`, "error"); }
   revalidatePath("/admin"); revalidatePath(basePath); revalidatePath(`${basePath}/${id}`);
   redirectWith(`${basePath}/${id}`, "transitioned");
 }
@@ -138,4 +212,24 @@ export async function reviewContentAction(entityInput: string, idInput: string, 
   }
   revalidatePath("/admin"); revalidatePath(basePath); revalidatePath(`${basePath}/${id}`);
   redirectWith(`${basePath}/${id}`, "reviewed");
+}
+
+const protectedPageSlugs = new Set(["home", "about", "academics", "admissions", "contact", "school-life", "gallery", "news", "events"]);
+export async function manageContentDeletionAction(entityInput: string, idInput: string, operationInput: string) {
+  const staff = await requireStaff(["SUPER_ADMIN"]);
+  const entity = entitySchema.parse(entityInput), id = idSchema.parse(idInput);
+  const operation = z.enum(["trash", "restore"]).parse(operationInput);
+  const admin = createSupabaseAdminClient(), table = tableByEntity[entity], path = pathByEntity[entity];
+  const { data: current, error: loadError } = await admin.from(table).select("id,title,slug,status,deleted_at").eq("id",id).single();
+  if (loadError || !current) redirect(path + "?error=notfound");
+  if (entity === "PAGE" && protectedPageSlugs.has(current.slug)) redirect(path + "?error=protected");
+  if (operation === "trash" && current.deleted_at) redirect(path + "?error=invalid");
+  if (operation === "restore" && !current.deleted_at) redirect("/admin/trash?error=invalid");
+  const changes = operation === "trash" ? { deleted_at: new Date().toISOString(), status: "ARCHIVED" } : { deleted_at: null, status: "DRAFT", published_at: null };
+  const { error } = await admin.from(table).update(changes).eq("id",id);
+  if (error) { console.error("Content deletion failed",{entity,id,code:error.code}); redirect(path + "?error=update"); }
+  const { error: auditError } = await admin.from("audit_logs").insert({ actor_id: staff.profileId, action: operation === "trash" ? "CONTENT_TRASHED" : "CONTENT_RESTORED", entity_type: table, entity_id: id, metadata: { title: current.title, previous_status: current.status } });
+  if (auditError) console.error("Content deletion audit failed", { entity, id, code: auditError.code });
+  revalidatePath("/admin"); revalidatePath(path); revalidatePath(path + "/" + id); revalidatePath("/admin/trash");
+  redirect(operation === "trash" ? path + "?deleted=1" : "/admin/trash?restored=1");
 }

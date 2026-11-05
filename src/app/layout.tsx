@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
-import { Footer } from "@/components/layout/footer";
-import { Header } from "@/components/layout/header";
+import { RouteChrome } from "@/components/layout/route-chrome";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
@@ -16,6 +15,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return <html lang="en" className={cn(inter.variable, jakarta.variable)}><body className="flex min-h-dvh flex-col antialiased">
     <a href="#main-content" className="fixed left-4 top-4 z-[100] -translate-y-24 bg-accent-gold px-4 py-3 font-semibold text-brand-900 focus:translate-y-0">Skip to content</a>
-    <Header /><main id="main-content" className="flex-1">{children}</main><Footer />
+    <RouteChrome>{children}</RouteChrome>
   </body></html>;
 }
