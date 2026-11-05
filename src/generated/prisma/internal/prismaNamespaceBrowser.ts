@@ -123,6 +123,7 @@ export const PageContentScalarFieldEnum = {
   body: 'body',
   status: 'status',
   createdById: 'createdById',
+  deletedAt: 'deletedAt',
   publishedAt: 'publishedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
